@@ -7,18 +7,12 @@ public class ApplicationDbContext : DbContext
 {
     private readonly IConfiguration _configuration;
     
-    public ApplicationDbContext(IConfiguration configuration)
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> context, IConfiguration configuration) : base(context)
     {
         _configuration = configuration;
     }
     
     public DbSet<Url>  Urls { get; set; }
-    
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseSqlite(_configuration.GetConnectionString("DefaultConnection"));
-        base.OnConfiguring(optionsBuilder);
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
