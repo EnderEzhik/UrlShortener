@@ -15,9 +15,9 @@ public class RedirectorController : ControllerBase
     
     // Переадресация с сокращенного кода на оригинальную ссылку
     [HttpGet("{shortenCode}")]
-    public async Task<IActionResult> Redirect(string shortenCode)
+    public async Task<IActionResult> RedirectFromShortCode(string shortenCode)
     {
-        var url = await _urlService.GetUrlByShortenCode(shortenCode);
+        var url = await _urlService.GetOriginalUrlByShortCode(shortenCode);
         return url is null ? NotFound() : RedirectPermanent(url);
     }
 }
