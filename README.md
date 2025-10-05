@@ -27,7 +27,10 @@
 UrlShortener/                 # Solution
 └── Shortener/                # Main project
     ├── Controllers/          # Контроллеры API
+    ├── Data/                 # Контекст БД
+    ├── Entities/             # Сущности EF Core
     ├── Models/               # Модели данных
+    │   └── DTOs/             # DTO-ответы
     └── Services/             # Бизнес-логика (сервисы)
 ```
 
