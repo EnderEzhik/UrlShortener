@@ -42,7 +42,7 @@ public class UrlService
     public async Task<string?> GetOriginalUrlByShortCode(string shortCode)
     {
         var url = await _db.Urls.FirstOrDefaultAsync(u => u.ShortCode == shortCode &&
-                                                          (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTime.UtcNow));
+                                                          (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTime.Now));
         return url?.OriginalUrl;
     }
 

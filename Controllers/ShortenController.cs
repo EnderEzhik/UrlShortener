@@ -20,6 +20,16 @@ public class ShortenController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ShortCodeResponse>> ShortenUrl(CreateShortUrlRequest requestData)
     {
+        if (string.IsNullOrEmpty(requestData.Url))
+        {
+            return BadRequest("Url can not be empty");
+        }
+
+        if (requestData.ExpiresAt.HasValue && requestData.ExpiresAt.Value < DateTime.Now)
+        {
+            return BadRequest("Expires date must be in the future");
+        }
+            
         var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
         var shortCodeResponse = new ShortCodeResponse()
         {
