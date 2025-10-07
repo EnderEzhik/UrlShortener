@@ -47,7 +47,7 @@ public class UrlService
     }
 
     // Создать короткую ссылку
-    public async Task<string> CreateShortUrl(string originalUrl)
+    public async Task<string> CreateShortUrl(string originalUrl, DateTime? expiresAt = null)
     {
         for (var attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
         {
@@ -55,7 +55,8 @@ public class UrlService
             var urlEntity = new ShortUrl()
             {
                 OriginalUrl = originalUrl,
-                ShortCode = shortCode
+                ShortCode = shortCode,
+                ExpiresAt = expiresAt
             };
             try
             {
@@ -74,7 +75,8 @@ public class UrlService
             var urlEntity = new ShortUrl()
             {
                 OriginalUrl = originalUrl,
-                ShortCode = shortCode
+                ShortCode = shortCode,
+                ExpiresAt = expiresAt
             };
             try
             {

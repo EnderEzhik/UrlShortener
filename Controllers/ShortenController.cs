@@ -20,10 +20,11 @@ public class ShortenController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ShortCodeResponse>> ShortenUrl(CreateShortUrlRequest requestData)
     {
-        var shortCode = await _urlService.CreateShortUrl(requestData.Url);
+        var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
         var shortCodeResponse = new ShortCodeResponse()
         {
-            ShortCode = shortCode
+            ShortCode = shortCode,
+            ExpiresAt = requestData.ExpiresAt
         };
         
         return Ok(shortCodeResponse);

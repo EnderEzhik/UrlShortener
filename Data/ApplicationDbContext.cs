@@ -9,7 +9,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> context
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<ShortUrl>().HasIndex(u => u.ShortCode).IsUnique();
+        modelBuilder.Entity<ShortUrl>().HasKey(u => u.ShortCode);
         
         base.OnModelCreating(modelBuilder);
     }

@@ -14,10 +14,10 @@ public class RedirectorController : ControllerBase
     }
     
     // Переадресация с сокращенного кода на оригинальную ссылку
-    [HttpGet("{shortenCode}")]
-    public async Task<IActionResult> RedirectFromShortCode(string shortenCode)
+    [HttpGet("{shortCode}")]
+    public async Task<IActionResult> RedirectFromShortCode(string shortCode)
     {
-        var url = await _urlService.GetOriginalUrlByShortCode(shortenCode);
+        var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
         return url is null ? NotFound() : RedirectPermanent(url);
     }
 }
