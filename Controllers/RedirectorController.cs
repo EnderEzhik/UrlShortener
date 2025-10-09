@@ -1,14 +1,23 @@
 using Microsoft.AspNetCore.Mvc;
+using Shortener.Services;
 
 namespace Shortener.Controllers;
 
 [ApiController]
 public class RedirectorController : ControllerBase
 {
-    // Переадресация с сокращенного кода на оригинальную ссылку
-    [HttpGet("{shortenCode}")]
-    public async Task<IActionResult> Redirect(string shortenCode)
+    private readonly UrlService _urlService;
+
+    public RedirectorController(UrlService urlService)
     {
-        throw new NotImplementedException();
+        _urlService = urlService;
+    }
+    
+    // Переадресация с сокращенного кода на оригинальную ссылку
+    [HttpGet("{shortCode}")]
+    public async Task<IActionResult> RedirectFromShortCode(string shortCode)
+    {
+        var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
+        return url is null ? NotFound() : RedirectPermanent(url);
     }
 }
