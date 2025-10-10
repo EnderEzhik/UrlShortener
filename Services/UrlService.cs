@@ -10,8 +10,6 @@ public class UrlService
 {
     private readonly ApplicationDbContext _db;
     private const int SHORT_CODE_LENGTH = 8;
-    private const int EXTENDED_SHORT_CODE_LENGTH = 10;
-    private const int MAX_ATTEMPTS = 5;
     private static readonly char[] URL_SAFE_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
 
     public UrlService(ApplicationDbContext db)
@@ -31,7 +29,7 @@ public class UrlService
         return new string(buffer);
     }
 
-    // Сохранить пару "оригинальная ссылка - сокращенная ссылка" в хранилище
+    // Сохранить короткую ссылку в базу данных
     private async Task SaveShortUrlToDatabase(ShortUrl shortUrlEntity)
     {
         _db.Urls.Add(shortUrlEntity);
@@ -49,46 +47,14 @@ public class UrlService
     // Создать короткую ссылку
     public async Task<string> CreateShortUrl(string originalUrl, DateTime? expiresAt = null)
     {
-        for (var attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
+        var shortCode = GenerateCode(SHORT_CODE_LENGTH);
+        var urlEntity = new ShortUrl()
         {
-            var shortCode = GenerateCode(SHORT_CODE_LENGTH);
-            var urlEntity = new ShortUrl()
-            {
-                OriginalUrl = originalUrl,
-                ShortCode = shortCode,
-                ExpiresAt = expiresAt
-            };
-            try
-            {
-                await SaveShortUrlToDatabase(urlEntity);
-                return shortCode;
-            }
-            catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqliteEx && sqliteEx.SqliteExtendedErrorCode == 2067)
-            {
-                continue;
-            }
-        }
-
-        for (var attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
-        {
-            var shortCode = GenerateCode(EXTENDED_SHORT_CODE_LENGTH);
-            var urlEntity = new ShortUrl()
-            {
-                OriginalUrl = originalUrl,
-                ShortCode = shortCode,
-                ExpiresAt = expiresAt
-            };
-            try
-            {
-                await SaveShortUrlToDatabase(urlEntity);
-                return shortCode;
-            }
-            catch (DbUpdateException ex) when (ex.InnerException is SqliteException sqliteEx && sqliteEx.SqliteExtendedErrorCode == 2067)
-            {
-                continue;
-            }
-        }
-
-        throw new InvalidOperationException("Не удалось создать уникальный короткий код.");
+            OriginalUrl = originalUrl,
+            ShortCode = shortCode,
+            ExpiresAt = expiresAt
+        };
+        await SaveShortUrlToDatabase(urlEntity);
+        return shortCode;
     }
 }
