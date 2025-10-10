@@ -1,3 +1,7 @@
+using Microsoft.EntityFrameworkCore;
+using Shortener.Data;
+using Shortener.Services;
+
 namespace Shortener;
 
 public class Program
@@ -6,12 +10,24 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Services.AddControllers();
+        ConfigureServices(builder);
 
         var app = builder.Build();
-        
+
         app.MapControllers();
 
         app.Run();
+    }
+
+    private static void ConfigureServices(WebApplicationBuilder builder)
+    {
+        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        {
+            options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"));
+        });
+        
+        builder.Services.AddScoped<UrlService>();
+        
+        builder.Services.AddControllers();
     }
 }

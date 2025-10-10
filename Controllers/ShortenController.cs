@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Shortener.Models;
+using Shortener.Models.DTOs;
+using Shortener.Services;
 
 namespace Shortener.Controllers;
 
@@ -7,10 +9,24 @@ namespace Shortener.Controllers;
 [Route("[controller]")]
 public class ShortenController : ControllerBase
 {
-    // Создать сокращенный код для ссылки
-    [HttpPost]
-    public async Task<IActionResult> ShortenUrl(ShorteningUrl requestData)
+    private readonly UrlService _urlService;
+    
+    public ShortenController(UrlService urlService)
     {
-        throw new NotImplementedException();
+        _urlService = urlService;
+    }
+    
+    // Создать сокращенную ссылку
+    [HttpPost]
+    public async Task<ActionResult<ShortCodeResponse>> ShortenUrl(CreateShortUrlRequest requestData)
+    {
+        var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
+        var shortCodeResponse = new ShortCodeResponse()
+        {
+            ShortCode = shortCode,
+            ExpiresAt = requestData.ExpiresAt
+        };
+    
+        return Ok(shortCodeResponse);
     }
 }
