@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.Sqlite;
 using System.Security.Cryptography;
 using Shortener.Data;
 using Shortener.Entities;
@@ -40,12 +39,12 @@ public class UrlService
     public async Task<string?> GetOriginalUrlByShortCode(string shortCode)
     {
         var url = await _db.Urls.FirstOrDefaultAsync(u => u.ShortCode == shortCode &&
-                                                          (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTime.Now));
+                                                          (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTimeOffset.UtcNow));
         return url?.OriginalUrl;
     }
 
     // Создать короткую ссылку
-    public async Task<string> CreateShortUrl(string originalUrl, DateTime? expiresAt = null)
+    public async Task<string> CreateShortUrl(string originalUrl, DateTimeOffset? expiresAt = null)
     {
         var shortCode = GenerateCode(SHORT_CODE_LENGTH);
         var urlEntity = new ShortUrl()
