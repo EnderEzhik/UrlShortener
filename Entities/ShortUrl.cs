@@ -7,6 +7,6 @@ public class ShortUrl
     // Primary Key
     public string ShortCode { get; set; } = null!;
     
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-    public DateTime? ExpiresAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? ExpiresAt { get; set; }
 }

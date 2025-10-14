@@ -10,5 +10,5 @@ public class CreateShortUrlRequest
     public string Url { get; set; }
     
     [JsonPropertyName("expiresAt")]
-    public DateTime? ExpiresAt { get; set; }
+    public DateTimeOffset? ExpiresAt { get; set; }
 }
