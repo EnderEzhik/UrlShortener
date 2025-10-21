@@ -1,0 +1,52 @@
+services:
+    database:
+        image: postgres:16-alpine
+        container_name: database
+        environment:
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
+        healthcheck:
+            test: [ "CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}" ]
+            interval: 5s
+            timeout: 3s
+            retries: 5
+        networks:
+            - internal
+            - external
+        ports:
+            - "6666:5432"
+        volumes:
+            - db-data:/var/lib/postgresql/data
+    
+    shortener:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: shortener
+        environment:
+            - ASPNETCORE_URLS=https://*:7000;http://*:5000
+            - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
+            - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+            - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Port=5432;Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
+        depends_on:
+            database:
+                condition: service_healthy
+        networks:
+            - internal
+            - external
+        ports:
+            - "5000:5000"
+            - "7000:7000"
+        volumes:
+            - ./certificates:/https:ro
+
+networks:
+    internal:
+        driver: bridge
+        internal: true
+    external:
+        driver: bridge
+
+volumes:
+    db-data:
