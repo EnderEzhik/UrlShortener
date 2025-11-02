@@ -8,7 +8,7 @@
                 "ASPNETCORE_ENVIRONMENT": "Development",
                 "ASPNETCORE_HTTP_PORTS": "5000",
                 "ASPNETCORE_HTTPS_PORTS": "7000",
-                "ConnectionStrings__DefaultConnection": "Data Source=urls.db"
+                "ConnectionStrings__DefaultConnection": "Host=localhost;Port=5432;Database=urls;Username=postgres;Password=password"
             }
         }
     }
