@@ -21,8 +21,8 @@ services:
     
     shortener:
         build:
-            context: .
-            dockerfile: Dockerfile
+            context: ./Shortener/
+            dockerfile: ./Dockerfile
         container_name: shortener
         environment:
             - ASPNETCORE_URLS=https://*:7000;http://*:5000
