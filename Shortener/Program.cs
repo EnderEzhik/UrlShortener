@@ -13,6 +13,7 @@ public class Program
         ConfigureLogging();
         
         var builder = WebApplication.CreateBuilder(args);
+        builder.Services.AddSerilog();
 
         ConfigureServices(builder);
 
