@@ -11,17 +11,32 @@ public class Program
     public static void Main(string[] args)
     {
         ConfigureLogging();
-        
-        var builder = WebApplication.CreateBuilder(args);
-        builder.Services.AddSerilog();
 
-        ConfigureServices(builder);
+        try
+        {
+            Log.Information("Starting up");
+            
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddSerilog();
 
-        var app = builder.Build();
+            ConfigureServices(builder);
+            Log.Information("Services configured");
 
-        app.MapControllers();
+            var app = builder.Build();
 
-        app.Run();
+            app.MapControllers();
+
+            Log.Information("Application started");
+            app.Run();
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "Application terminated unexpectedly. Error: {Message}", e.Message);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
 
     private static void ConfigureLogging()

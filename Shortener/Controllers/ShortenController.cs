@@ -9,6 +9,7 @@ namespace Shortener.Controllers;
 [Route("[controller]")]
 public class ShortenController : ControllerBase
 {
+    private readonly Serilog.ILogger logger = Serilog.Log.ForContext<ShortenController>();
     private readonly UrlService _urlService;
     
     public ShortenController(UrlService urlService)
@@ -20,13 +21,21 @@ public class ShortenController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ShortCodeResponse>> ShortenUrl(CreateShortUrlRequest requestData)
     {
-        var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
-        var shortCodeResponse = new ShortCodeResponse()
+        try
         {
-            ShortCode = shortCode,
-            ExpiresAt = requestData.ExpiresAt
-        };
-    
-        return Ok(shortCodeResponse);
+            var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
+            var shortCodeResponse = new ShortCodeResponse()
+            {
+                ShortCode = shortCode,
+                ExpiresAt = requestData.ExpiresAt
+            };
+
+            return Ok(shortCodeResponse);
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error creating shortcode. Error: {ErrorMessage}", e.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 }
