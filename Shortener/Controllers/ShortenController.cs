@@ -23,13 +23,15 @@ public class ShortenController : ControllerBase
     {
         try
         {
+            logger.Information("POST Request for creating short url");
             var shortCode = await _urlService.CreateShortUrl(requestData.Url, requestData.ExpiresAt);
             var shortCodeResponse = new ShortCodeResponse()
             {
                 ShortCode = shortCode,
                 ExpiresAt = requestData.ExpiresAt
             };
-
+            
+            logger.Information("Short url created");
             return Ok(shortCodeResponse);
         }
         catch (Exception e)
