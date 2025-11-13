@@ -40,6 +40,7 @@ public class UrlService
     // Получить оригинальную ссылку по коду
     public async Task<string?> GetOriginalUrlByShortCode(string shortCode)
     {
+        logger.Information("Getting original url for short code");
         var url = await _db.Urls.FirstOrDefaultAsync(u => u.ShortCode == shortCode &&
                                                           (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTimeOffset.UtcNow));
         return url?.OriginalUrl;

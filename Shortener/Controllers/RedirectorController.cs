@@ -18,10 +18,18 @@ public class RedirectorController : ControllerBase
     [HttpGet("{shortCode}")]
     public async Task<IActionResult> RedirectFromShortCode(string shortCode)
     {
+        logger.Information("GET Request for redirect from short code");
         try
         {
             var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
-            return url is null ? NotFound() : RedirectPermanent(url);
+            if (url is null)
+            {
+                logger.Information("No original url for short code");
+                return NotFound();
+            }
+
+            logger.Information("Redirecting from short code");
+            return Redirect(url);
         }
         catch (Exception e)
         {
