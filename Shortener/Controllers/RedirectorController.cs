@@ -6,6 +6,7 @@ namespace Shortener.Controllers;
 [ApiController]
 public class RedirectorController : ControllerBase
 {
+    private readonly Serilog.ILogger logger = Serilog.Log.ForContext<RedirectorController>();
     private readonly UrlService _urlService;
 
     public RedirectorController(UrlService urlService)
@@ -17,7 +18,23 @@ public class RedirectorController : ControllerBase
     [HttpGet("{shortCode}")]
     public async Task<IActionResult> RedirectFromShortCode(string shortCode)
     {
-        var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
-        return url is null ? NotFound() : RedirectPermanent(url);
+        logger.Information("GET Request for redirect from short code");
+        try
+        {
+            var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
+            if (url is null)
+            {
+                logger.Information("No original url for short code");
+                return NotFound();
+            }
+
+            logger.Information("Redirecting from short code");
+            return Redirect(url);
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error redirecting. Error: {ErrorMessage}", e.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 }

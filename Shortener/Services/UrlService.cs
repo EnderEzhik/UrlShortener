@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using Serilog;
 using Shortener.Data;
 using Shortener.Entities;
 
@@ -7,6 +8,7 @@ namespace Shortener.Services;
 
 public class UrlService
 {
+    private readonly Serilog.ILogger logger = Log.ForContext<UrlService>();
     private readonly ApplicationDbContext _db;
     private const int SHORT_CODE_LENGTH = 8;
     private static readonly char[] URL_SAFE_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
@@ -38,6 +40,7 @@ public class UrlService
     // Получить оригинальную ссылку по коду
     public async Task<string?> GetOriginalUrlByShortCode(string shortCode)
     {
+        logger.Information("Getting original url for short code");
         var url = await _db.Urls.FirstOrDefaultAsync(u => u.ShortCode == shortCode &&
                                                           (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTimeOffset.UtcNow));
         return url?.OriginalUrl;
@@ -46,6 +49,8 @@ public class UrlService
     // Создать короткую ссылку
     public async Task<string> CreateShortUrl(string originalUrl, DateTimeOffset? expiresAt = null)
     {
+        logger.Information("Creating short url");
+        logger.Information("Generating short code");
         var shortCode = GenerateCode(SHORT_CODE_LENGTH);
         var urlEntity = new ShortUrl()
         {
@@ -53,7 +58,10 @@ public class UrlService
             ShortCode = shortCode,
             ExpiresAt = expiresAt
         };
+        logger.Information("Short code generated");
+        logger.Information("Saving short url to database");
         await SaveShortUrlToDatabase(urlEntity);
+        logger.Information("Short url saved");
         return shortCode;
     }
 }

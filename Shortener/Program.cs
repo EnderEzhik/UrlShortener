@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Filters;
 using Shortener.Data;
 using Shortener.Services;
 
@@ -8,15 +10,56 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);
+        ConfigureLogging();
 
-        ConfigureServices(builder);
+        try
+        {
+            Log.Information("Starting up");
+            
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddSerilog();
 
-        var app = builder.Build();
+            ConfigureServices(builder);
+            Log.Information("Services configured");
 
-        app.MapControllers();
+            var app = builder.Build();
 
-        app.Run();
+            app.MapControllers();
+
+            Log.Information("Application started");
+            app.Run();
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "Application terminated unexpectedly. Error: {Message}", e.Message);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+
+    private static void ConfigureLogging()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .Enrich.FromLogContext()
+            .WriteTo.File(
+                path: "logs/all/shortener-all.log",
+                rollingInterval: RollingInterval.Day,
+                shared: true)
+            .WriteTo.Logger(lc => lc
+                .Enrich.FromLogContext()
+                .Filter.ByExcluding(Matching.FromSource("System"))
+                .Filter.ByExcluding(Matching.FromSource("Microsoft"))
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File(
+                    path: "logs/shortener.log",
+                    rollingInterval: RollingInterval.Day,
+                    shared: true,
+                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+            )
+            .CreateLogger();
     }
 
     private static void ConfigureServices(WebApplicationBuilder builder)
