@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Caching.Distributed;
 using Serilog;
 using Shortener.Data;
 using Shortener.Entities;
+using Shortener.Extensions;
 
 namespace Shortener.Services;
 
@@ -10,12 +12,14 @@ public class UrlService
 {
     private readonly Serilog.ILogger logger = Log.ForContext<UrlService>();
     private readonly ApplicationDbContext _db;
+    private readonly IDistributedCache _cache;
     private const int SHORT_CODE_LENGTH = 8;
     private static readonly char[] URL_SAFE_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
 
-    public UrlService(ApplicationDbContext db)
+    public UrlService(ApplicationDbContext db, IDistributedCache cache)
     {
         _db = db;
+        _cache = cache;
     }
 
     // Сгенерировать код для короткой ссылки
@@ -44,6 +48,23 @@ public class UrlService
         var url = await _db.Urls.FirstOrDefaultAsync(u => u.ShortCode == shortCode &&
                                                           (!u.ExpiresAt.HasValue || u.ExpiresAt!.Value > DateTimeOffset.UtcNow));
         return url?.OriginalUrl;
+    }
+
+    public async Task<string?> GetCachedOriginalUrlByShortCode(string shortCode)
+    {
+        var originalUrl = await _cache.GetRecordAsync<string?>(shortCode);
+        if (originalUrl is not null)
+        {
+            return originalUrl;
+        }
+        
+        originalUrl = await GetOriginalUrlByShortCode(shortCode);
+        if (originalUrl is not null)
+        {
+            await _cache.SetRecordAsync<string>(shortCode, (string)originalUrl);
+        }
+        
+        return originalUrl;
     }
 
     // Создать короткую ссылку
