@@ -21,7 +21,7 @@ public class RedirectorController : ControllerBase
         logger.Information("GET Request for redirect from short code");
         try
         {
-            var url = await _urlService.GetOriginalUrlByShortCode(shortCode);
+            var url = await _urlService.GetCachedOriginalUrlByShortCode(shortCode);
             if (url is null)
             {
                 logger.Information("No original url for short code");

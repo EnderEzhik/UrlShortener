@@ -68,6 +68,13 @@ public class Program
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
         });
+
+        builder.Services.AddStackExchangeRedisCache(options =>
+        {
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            options.Configuration = redisConnectionString;
+            options.InstanceName = "UrlShortener_";
+        });
         
         builder.Services.AddScoped<UrlService>();
         
