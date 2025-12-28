@@ -25,6 +25,8 @@ public class Program
             var app = builder.Build();
 
             app.MapControllers();
+            
+            app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
             Log.Information("Application started");
             app.Run();
