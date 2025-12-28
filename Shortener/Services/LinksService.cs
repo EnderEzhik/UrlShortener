@@ -24,7 +24,9 @@ public class LinksService
 
     public async Task<ShortUrl> CreateShortUrlAsync(CreateShortUrlRequest request)
     {
+        logger.Information("Generating short code");
         string shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
+        logger.Information("Short code generated: {shortCode}", shortCode);
 
         ShortUrl shortUrl = new ShortUrl()
         {
@@ -32,9 +34,20 @@ public class LinksService
             ShortCode = shortCode,
             ExpiresAt = request.ExpiresAt
         };
+        
+        logger.Information("Saving short url to database. Short code: {shortCode}", shortUrl);
 
-        _db.Urls.Add(shortUrl);
-        await _db.SaveChangesAsync();
+        try
+        {
+            _db.Urls.Add(shortUrl);
+            await _db.SaveChangesAsync();
+            logger.Information("Short url saved successfully. Short code: {shortCode}", shortUrl);
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Database error while saving short url. Url: {url}, Short code: {shortCode}", request.Url, shortUrl);
+            throw;
+        }
         
         return shortUrl;
     }
