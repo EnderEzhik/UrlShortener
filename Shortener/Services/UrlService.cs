@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
 using Microsoft.Extensions.Caching.Distributed;
 using Serilog;
 using Shortener.Data;
 using Shortener.Entities;
 using Shortener.Extensions;
+using Shortener.Common.Utils;
 
 namespace Shortener.Services;
 
@@ -14,7 +14,6 @@ public class UrlService
     private readonly ApplicationDbContext _db;
     private readonly IDistributedCache _cache;
     private const int SHORT_CODE_LENGTH = 8;
-    private static readonly char[] URL_SAFE_ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".ToCharArray();
 
     public UrlService(ApplicationDbContext db, IDistributedCache cache)
     {
@@ -22,21 +21,15 @@ public class UrlService
         _cache = cache;
     }
 
-    // Сгенерировать код для короткой ссылки
-    private static string GenerateCode(int length)
-    {
-        var buffer = new char[length];
-        for (var i = 0; i < length; i++)
-        {
-            var index = RandomNumberGenerator.GetInt32(URL_SAFE_ALPHABET.Length);
-            buffer[i] = URL_SAFE_ALPHABET[index];
-        }
-        return new string(buffer);
-    }
-
     // Сохранить короткую ссылку в базу данных
     private async Task SaveShortUrlToDatabase(ShortUrl shortUrlEntity)
     {
+        var checkShortCode = await GetShortUrlByShortCode(shortUrlEntity.ShortCode);
+        if (checkShortCode is not null)
+        {
+            throw new ArgumentException("Short code already exists");
+        }
+        
         _db.Urls.Add(shortUrlEntity);
         await _db.SaveChangesAsync();
     }
@@ -50,6 +43,7 @@ public class UrlService
         return url?.OriginalUrl;
     }
 
+    // Получить оригинальную ссылку по коду с предварительной проверкой её наличия в кэше
     public async Task<string?> GetCachedOriginalUrlByShortCode(string shortCode)
     {
         var originalUrl = await _cache.GetRecordAsync<string?>(shortCode);
@@ -71,18 +65,46 @@ public class UrlService
     public async Task<string> CreateShortUrl(string originalUrl, DateTimeOffset? expiresAt = null)
     {
         logger.Information("Creating short url");
+        
         logger.Information("Generating short code");
-        var shortCode = GenerateCode(SHORT_CODE_LENGTH);
+        var shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
+        logger.Information("Short code generated");
+        
         var urlEntity = new ShortUrl()
         {
             OriginalUrl = originalUrl,
             ShortCode = shortCode,
             ExpiresAt = expiresAt
         };
-        logger.Information("Short code generated");
+        
         logger.Information("Saving short url to database");
         await SaveShortUrlToDatabase(urlEntity);
         logger.Information("Short url saved");
         return shortCode;
+    }
+
+    // Получить все созданные ссылки
+    public async Task<List<ShortUrl>> GetAllShortUrls()
+    {
+        var urls = await _db.Urls.ToListAsync();
+        return urls;
+    }
+    
+    // Получить ссылку по короткому коду
+    public async Task<ShortUrl?> GetShortUrlByShortCode(string shortCode)
+    {
+        var url = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+        return url;
+    }
+
+    // Удалить короткую ссылку по короткому коду
+    public async Task<bool> DeleteShortUrl(string shortCode)
+    {
+        var url = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+        if (url is null) return false;
+        
+        _db.Urls.Remove(url);
+        await _db.SaveChangesAsync();
+        return true;
     }
 }
