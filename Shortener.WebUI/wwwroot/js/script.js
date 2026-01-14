@@ -1,4 +1,3 @@
-// const urlsList = document.getElementsByTagName("url-history-list");
 const urlsList = document.getElementById("url-history-list");
 
 function addUrlToUrlList(urlData) {
@@ -67,6 +66,26 @@ function initForm() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+async function initUrlList() {
+    try {
+        const response = await fetch("https://localhost:7000/api/links");
+        if (!response.ok) {
+            console.log("Error getting list urls:\n" + "Status Code: " + response.status + "\n" + "Error: " + await response.text());
+            return;
+        }
+
+        const urls = await response.json();
+        console.log(urls);
+        urls.forEach((urlData) => {
+            addUrlToUrlList(urlData);
+        });
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", async () => {
     initForm();
+    await initUrlList();
 })

@@ -19,18 +19,18 @@ public class LinksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ShortCodeResponse>> CreateShortUrl(CreateShortUrlRequest data)
+    public async Task<ActionResult<ShortCodeResponse>> CreateShortUrl(CreateShortUrlRequest requestData)
     {
-        logger.Information("Create short url request. Url: {url}", data.Url);
+        logger.Information("Create short url request. Url: {url}", requestData.Url);
         try
         {
-            var shortUrl = await _linksService.CreateShortUrlAsync(data);
+            var shortUrl = await _linksService.CreateShortUrlAsync(requestData);
             logger.Information("Short url successfully created. Short code: {shortCode}", shortUrl);
             return Ok(shortUrl);
         }
         catch (Exception ex)
         {
-            logger.Error(ex, "Unexpected error while  creating new short url. Url: {url}", data.Url);
+            logger.Error(ex, "Unexpected error while creating new short url. Url: {url}", requestData.Url);
             return StatusCode(500, "Internal server error");
         }
     }
