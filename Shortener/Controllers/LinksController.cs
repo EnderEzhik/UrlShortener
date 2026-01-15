@@ -43,9 +43,9 @@ public class LinksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ShortCodeResponse>>> GetAllShortUrls()
+    public async Task<ActionResult<List<ShortCodeResponse>>> GetAllShortUrls([FromQuery] UrlsFiltersRequest filters)
     {
-        var shortUrlList = await _linksService.GetAllShortUrlsAsync();
+        var shortUrlList = await _linksService.GetAllShortUrlsAsync(filters.containsSubstring, filters.excludeExpiredUrls);
         return Ok(shortUrlList);
     }
 

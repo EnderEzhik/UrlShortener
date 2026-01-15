@@ -75,9 +75,19 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetAllShortUrlsAsync()
+    public async Task<List<ShortUrl>> GetAllShortUrlsAsync(string? containsSubstring, bool excludeExpiredUrls = true)
     {
-        List<ShortUrl> shortUrls = await _db.Urls.ToListAsync();
+        var query = _db.Urls.AsQueryable();
+        if (containsSubstring is not null)
+        {
+            query = query.Where(url => url.OriginalUrl.Contains(containsSubstring));
+        }
+        if (excludeExpiredUrls)
+        {
+            query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTime.Now);
+        }
+        
+        List<ShortUrl> shortUrls = await query.ToListAsync();
         return shortUrls;
     }
 

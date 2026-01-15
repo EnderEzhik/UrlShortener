@@ -25,7 +25,7 @@ public class RedirectorController : ControllerBase
             if (url is null)
             {
                 logger.Information("No original url for short code");
-                return NotFound();
+                return NotFound(new { message = "Short code not found or expired" });
             }
 
             logger.Information("Redirecting from short code");
