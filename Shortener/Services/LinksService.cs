@@ -11,7 +11,7 @@ namespace Shortener.Services;
 
 public class LinksService
 {
-    private readonly Serilog.ILogger logger = Log.ForContext<UrlService>();
+    private readonly Serilog.ILogger logger = Log.ForContext<LinksService>();
     private readonly ApplicationDbContext _db;
     private readonly IDistributedCache _cache;
     private const int SHORT_CODE_LENGTH = 8;

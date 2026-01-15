@@ -1,5 +1,22 @@
 const urlsList = document.getElementById("url-history-list");
 
+async function deleteUrl(shortCode) {
+    try {
+        const response = await fetch(`https://localhost:7000/api/links/${shortCode}`, { method: "DELETE" });
+        if (!response.ok) {
+            console.log("Error creating shortCode:\n" + "Status Code: " + response.status + "\n" + "Error: " + await response.text());
+            return;
+        }
+        
+        document.getElementById(shortCode).remove();
+        
+        console.log("Link deleted successfully.");
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+
 function addUrlToUrlList(urlData) {
     const newUrlElement = document.createElement("li");
     newUrlElement.setAttribute("id", urlData.shortCode);
@@ -19,6 +36,11 @@ function addUrlToUrlList(urlData) {
         
         newUrlElement.firstChild.appendChild(expiredAtSpan);
     }
+    
+    const deleteBtn = newUrlElement.querySelector(".delete-btn");
+    deleteBtn.addEventListener("click", async () => {
+        await deleteUrl(urlData.shortCode);
+    });
     
     urlsList.prepend(newUrlElement);
 }

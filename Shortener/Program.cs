@@ -78,7 +78,6 @@ public class Program
             options.InstanceName = "UrlShortener_";
         });
         
-        builder.Services.AddScoped<UrlService>();
         builder.Services.AddScoped<LinksService>();
         
         builder.Services.AddControllers();
