@@ -1,111 +1,122 @@
-const urlsList = document.getElementById("url-history-list");
+const form = document.getElementById("shortener-form");
+const originalUrlInput = document.getElementById("original-url");
+const expiryInput = document.getElementById("expiry-date");
+const shortUrlInput = document.getElementById("short-url");
+const copyBtn = document.getElementById("copy-btn");
+const resetBtn = document.getElementById("reset-btn");
+const meta = document.getElementById("meta");
 
-async function deleteUrl(shortCode) {
-    try {
-        const response = await fetch(`/api/links/${shortCode}`, { method: "DELETE" });
-        if (!response.ok) {
-            console.log("Error creating shortCode:\n" + "Status Code: " + response.status + "\n" + "Error: " + await response.text());
-            return;
-        }
-        
-        document.getElementById(shortCode).remove();
-    }
-    catch(error){
-        console.log(error);
-    }
+const toastEl = document.getElementById("app-toast");
+const toastBody = document.getElementById("toast-body");
+const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
+
+function showToast(message) {
+    toastBody.textContent = message;
+    toast.show();
 }
 
-function addUrlToUrlList(urlData) {
-    const newUrlElement = document.createElement("li");
-    newUrlElement.setAttribute("id", urlData.shortCode);
-    newUrlElement.classList.add("url-item");
-    newUrlElement.innerHTML = `<div class="url-content">
-                        <div class="url-header">
-                            <a href="redirect/${urlData.shortCode}" class="url-link">${urlData.shortCode}</a>
-                        </div>
-                        <span class="url-original">${urlData.originalUrl}</span>
-                    </div>
-                    <button class="delete-btn" aria-label="Удалить ссылку">×</button>`;
-    
-    if (urlData.expiresAt) {
-        const expiredAtSpan = document.createElement("span");
-        expiredAtSpan.classList.add("url-original");
-        expiredAtSpan.textContent = new Date(urlData.expiresAt).toLocaleString();
-        
-        newUrlElement.firstChild.appendChild(expiredAtSpan);
-    }
-    
-    const deleteBtn = newUrlElement.querySelector(".delete-btn");
-    deleteBtn.addEventListener("click", async () => {
-        await deleteUrl(urlData.shortCode);
+async function createShortUrl(originalUrl, expiresDatetime) {
+    const response = await fetch("https://localhost:7000/api/links", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            url: originalUrl,
+            expiresAt: expiresDatetime
+        })
     });
+    const data = await response.json();
+    console.log(data);
+    return data;
+}
+
+function buildShortUrl(shortCode) {
+    return "https://localhost:7000/" + shortCode;
+}
+
+function formatExpiry(value) {
+    if (!value) return "";
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
+}
+
+async function copyToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+    }
+
+    const tmp = document.createElement("textarea");
+    tmp.value = text;
+    tmp.setAttribute("readonly", "");
+    tmp.style.position = "absolute";
+    tmp.style.left = "-9999px";
+    document.body.appendChild(tmp);
+    tmp.select();
+    document.execCommand("copy");
+    document.body.removeChild(tmp);
+}
+
+function setResult(shortUrl, expiryValue) {
+    shortUrlInput.value = shortUrl;
+    copyBtn.disabled = !shortUrl;
+    meta.textContent = expiryValue ? "Истекает: " + formatExpiry(expiryValue) : "Без даты истечения";
+}
+
+function reset() {
+    form.classList.remove("was-validated");
+    originalUrlInput.value = "";
+    expiryInput.value = "";
+    shortUrlInput.value = "";
+    copyBtn.disabled = true;
+    meta.textContent = "";
+}
+
+resetBtn.addEventListener("click", () => {
+    reset();
+    showToast("Сброшено");
+    originalUrlInput.focus();
+});
+
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    form.classList.add("was-validated");
+    if (!form.checkValidity()) return;
     
-    urlsList.prepend(newUrlElement);
-}
-
-async function CreateShortUrl() {
-    event.preventDefault();
-
-    const url = document.getElementById("url-input").value;
-    const urlExpires = document.getElementById("expiry-date").value;
-
-    const requestBodyData = {
-        url: url
-    }
-
-    if (urlExpires.trim() && urlExpires.trim().length > 0) {
-        requestBodyData.expiresAt = new Date(urlExpires).toISOString();
+    const originalUrl = originalUrlInput.value;
+    
+    let expiresDatetime = null;
+    const expiryValue = expiryInput.value;
+    if (expiryValue) {
+        const expiryDate = new Date(expiryValue);
+        expiryDate.setMilliseconds(0);
+        expiresDatetime = expiryDate.toISOString();
     }
 
     try {
-        const response = await fetch("/api/links", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(requestBodyData)
-        });
+        const data = await createShortUrl(originalUrl, expiresDatetime);
+        
+        const shortUrl = buildShortUrl(data["shortCode"]);
 
-        if (!response.ok) {
-            console.log("Error creating shortCode:\n" + "Status Code: " + response.status + "\n" + "Error: " + await response.text());
-            //TODO: добавить сообщение об ошибке
-            return;
-        }
-
-        const data = await response.json();
-
-        addUrlToUrlList(data);
-        document.getElementById("short-url-form").reset();
+        setResult(shortUrl, data["expiresAt"]);
+        showToast("Короткая ссылка создана");
     }
     catch (error) {
-        console.log(error);
+        showToast("Не удалось создать короткую ссылку");
     }
-}
+});
 
-function initListeners() {
-    document.getElementById("short-url-form").addEventListener("submit", CreateShortUrl);
-}
-
-async function loadUrls() {
+copyBtn.addEventListener("click", async () => {
+    const value = shortUrlInput.value.trim();
+    if (!value) return;
     try {
-        const response = await fetch("/api/links");
-        if (!response.ok) {
-            console.log("Error getting urls:\n" + "Status Code: " + response.status + "\n" + "Error: " + await response.text());
-            //TODO: добавить сообщение об ошибке загрузке данных
-            return;
-        }
-
-        const urls = await response.json();
-        urls.forEach((urlData) => {
-            addUrlToUrlList(urlData);
-        });
+        await copyToClipboard(value);
+        showToast("Скопировано в буфер обмена");
+    } catch {
+        showToast("Не удалось скопировать");
     }
-    catch (error) {
-        console.log(error);
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    initListeners();
-    loadUrls();
-})
+});
