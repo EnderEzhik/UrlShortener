@@ -29,7 +29,7 @@ public class Program
             }
         });
 
-        app.MapGet("/redirect/{shortCode}", async (IHttpClientFactory httpClientFactory, string shortCode) =>
+        app.MapGet("/{shortCode:regex(^[a-zA-Z0-9]{{8}}$)}", async (IHttpClientFactory httpClientFactory, string shortCode) =>
         {
             var client = httpClientFactory.CreateClient("shortener");
 
