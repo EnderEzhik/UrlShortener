@@ -10,13 +10,15 @@ const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
 const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
 
+const apiServerAddress = "https://localhost:7000/api";
+
 function showToast(message) {
     toastBody.textContent = message;
     toast.show();
 }
 
 async function createShortUrl(originalUrl, expiresDatetime) {
-    const response = await fetch("https://localhost:7000/api/links", {
+    const response = await fetch(`${apiServerAddress}/links`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -32,7 +34,7 @@ async function createShortUrl(originalUrl, expiresDatetime) {
 }
 
 function buildShortUrl(shortCode) {
-    return "https://localhost:7000/" + shortCode;
+    return `${apiServerAddress}/` + shortCode;
 }
 
 function formatExpiry(value) {
@@ -40,6 +42,13 @@ function formatExpiry(value) {
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return "";
     return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
+}
+
+function removeMilliseconds(dateTime) {
+    const dateTimeString = dateTime.toISOString();
+    const dateTimeSplited = dateTimeString.split(".");
+    const dateTimeStringWithoutMilliseconds = dateTimeSplited[0] + "Z";
+    return dateTimeStringWithoutMilliseconds;
 }
 
 async function copyToClipboard(text) {
@@ -90,11 +99,11 @@ form.addEventListener("submit", async (e) => {
     const originalUrl = originalUrlInput.value;
     
     let expiresDatetime = null;
-    const expiryValue = expiryInput.value;
-    if (expiryValue) {
-        const expiryDate = new Date(expiryValue);
-        expiryDate.setMilliseconds(0);
-        expiresDatetime = expiryDate.toISOString();
+    if (expiryInput.value) {
+        const expiryDate = new Date(expiryInput.value);
+        // expiryDate.setMilliseconds(0);
+        // expiresDatetime = expiryDate.toISOString();
+        expiresDatetime = removeMilliseconds(expiryDate);
     }
 
     try {
