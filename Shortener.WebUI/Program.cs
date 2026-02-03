@@ -15,9 +15,18 @@ public class Program
         
         var app = builder.Build();
 
-        app.MapGet("/error", async (HttpContext context) =>
+        app.UseStaticFiles();
+        
+        app.MapGet("/", () => Results.File("index.html", "text/html"));
+        app.MapGet("/error", () => Results.File("error.html", "text/html"));
+
+        app.Use(async (context, next) =>
         {
-            await context.Response.WriteAsync("An error occured");
+            await next();
+            if (context.Response.StatusCode == 404)
+            {
+                context.Response.Redirect("/error");
+            }
         });
 
         app.MapGet("/redirect/{shortCode}", async (IHttpClientFactory httpClientFactory, string shortCode) =>
@@ -27,47 +36,19 @@ public class Program
             try
             {
                 var response = await client.GetAsync($"/api/links/{shortCode}");
-                response.EnsureSuccessStatusCode();
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return Results.NotFound();
+                }
                 ShortUrlResponseDTO data = (await response.Content.ReadFromJsonAsync<ShortUrlResponseDTO>())!;
                 return Results.Redirect(data.OriginalUrl);
             }
-            catch (HttpRequestException e)
-            {
-                if (e.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
-                {
-                    return Results.Redirect("/error");
-                }
-
-                throw;
-            }
             catch (Exception e)
             {
                 Console.WriteLine(e);
                 throw;
             }
         });
-        
-        app.MapGet(("/api/links"), async (IHttpClientFactory httpClientFactory) =>
-        {
-            var client = httpClientFactory.CreateClient("shortener");
-
-            try
-            {
-                var response = await client.GetAsync("/api/links");
-                response.EnsureSuccessStatusCode();
-
-                var urls = (await response.Content.ReadFromJsonAsync<List<ShortUrlResponseDTO>>())!;
-                return urls;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
-        });
-
-        app.UseDefaultFiles();
-        app.UseStaticFiles();
 
         app.Run();
     }
