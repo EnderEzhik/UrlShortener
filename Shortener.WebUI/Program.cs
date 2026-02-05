@@ -10,7 +10,7 @@ public class Program
 
         builder.Services.AddHttpClient("shortener", client =>
         {
-            client.BaseAddress = new Uri("http://localhost:5000");
+            client.BaseAddress = new Uri("http://shortener:5000");
         });
         
         var app = builder.Build();
@@ -37,7 +37,7 @@ public class Program
             try
             {
                 var response = await client.GetAsync($"/api/links/{shortCode}");
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)//TODO: заменить на адекватную обработку
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
                 {
                     return Results.NotFound();
                 }
