@@ -10,7 +10,7 @@ const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
 const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
 
-const apiServerAddress = "https://localhost:7000/api";
+const apiServerAddress = "https://localhost:5000/api";
 
 function showToast(message) {
     toastBody.textContent = message;
@@ -28,13 +28,11 @@ async function createShortUrl(originalUrl, expiresDatetime) {
             expiresAt: expiresDatetime
         })
     });
-    const data = await response.json();
-    console.log(data);
-    return data;
+    return await response.json();
 }
 
 function buildShortUrl(shortCode) {
-    return `${apiServerAddress}/` + shortCode;
+    return window.location.origin + "/" + shortCode;
 }
 
 function formatExpiry(value) {
@@ -101,8 +99,6 @@ form.addEventListener("submit", async (e) => {
     let expiresDatetime = null;
     if (expiryInput.value) {
         const expiryDate = new Date(expiryInput.value);
-        // expiryDate.setMilliseconds(0);
-        // expiresDatetime = expiryDate.toISOString();
         expiresDatetime = removeMilliseconds(expiryDate);
     }
 
