@@ -25,6 +25,13 @@ public class LinksService
     public async Task<ShortUrl> CreateShortUrlAsync(CreateShortUrlRequest request)
     {
         logger.Information("Generating short code");
+
+        if (request.ExpiresAt <= DateTime.UtcNow)
+        {
+            logger.Information("Expires must be in the future");
+            throw new ArgumentException("Expires must be in the future");
+        }
+        
         string shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
         logger.Information("Short code generated: {shortCode}", shortCode);
 
@@ -98,7 +105,9 @@ public class LinksService
         {
             return false;
         }
-
+        
+        await _cache.RemoveAsync(shortCode);
+        
         _db.Urls.Remove(shortUrl);
         await _db.SaveChangesAsync();
         return true;
