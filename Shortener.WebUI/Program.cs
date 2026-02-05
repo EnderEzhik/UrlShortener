@@ -18,6 +18,7 @@ public class Program
         app.UseStaticFiles();
         
         app.MapGet("/", () => Results.File("index.html", "text/html"));
+        app.MapGet("/links-history", () => Results.File("linksHistory.html", "text/html"));
         app.MapGet("/error", () => Results.File("error.html", "text/html"));
 
         app.Use(async (context, next) =>
@@ -36,7 +37,7 @@ public class Program
             try
             {
                 var response = await client.GetAsync($"/api/links/{shortCode}");
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)//TODO: заменить на адекватную обработку
                 {
                     return Results.NotFound();
                 }
