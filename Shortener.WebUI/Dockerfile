@@ -18,8 +18,8 @@ RUN dotnet publish "./Shortener.WebUI.csproj" -c $BUILD_CONFIGURATION -o /app/pu
 
 FROM base AS final
 WORKDIR /app
-EXPOSE 5211
-EXPOSE 7176
+EXPOSE 5001
+EXPOSE 7001
 
 RUN mkdir -p /https
 

@@ -64,7 +64,7 @@ services:
             dockerfile: ./Dockerfile
         container_name: shortener.web.ui
         environment:
-            - ASPNETCORE_URLS=https://*:7176;http://*:5211
+            - ASPNETCORE_URLS=https://*:7001;http://*:5001
             - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
             - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
         depends_on:
@@ -74,8 +74,8 @@ services:
             - internal
             - external
         ports:
-            - "5211:5211"
-            - "7176:7176"
+            - "5001:5001"
+            - "7001:7001"
         volumes:
             -   ./certificates:/https:ro
 
