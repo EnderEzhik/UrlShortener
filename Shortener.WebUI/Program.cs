@@ -38,11 +38,15 @@ public class Program
             try
             {
                 var response = await client.GetAsync($"/api/links/{shortCode}");
-                if (response.StatusCode == System.Net.HttpStatusCode.NotFound || response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                if (!response.IsSuccessStatusCode)
                 {
-                    return Results.NotFound();
+                    return Results.Redirect("/error");
                 }
                 ShortUrlResponseDTO data = (await response.Content.ReadFromJsonAsync<ShortUrlResponseDTO>())!;
+                if (data.ExpiresAt.HasValue && data.ExpiresAt.Value < DateTime.Now)
+                {
+                    return Results.Redirect("/error");
+                }
                 return Results.Redirect(data.OriginalUrl);
             }
             catch (Exception e)
