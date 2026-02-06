@@ -1,3 +1,6 @@
+import {apiServerAddress} from "./config.js";
+import {formatDate, buildShortUrl} from "./common.js";
+
 const form = document.getElementById("shortener-form");
 const originalUrlInput = document.getElementById("original-url");
 const expiryInput = document.getElementById("expiry-date");
@@ -9,8 +12,6 @@ const meta = document.getElementById("meta");
 const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
 const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
-
-const apiServerAddress = "https://localhost:5000/api";
 
 function showToast(message) {
     toastBody.textContent = message;

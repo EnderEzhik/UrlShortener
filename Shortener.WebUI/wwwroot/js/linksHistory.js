@@ -1,10 +1,13 @@
-const apiServerAddress = "https://localhost:7000/api";
+import {apiServerAddress} from "./config.js";
+import {formatDate, buildShortUrl} from "./common.js";
+
 const linksLoading = document.getElementById("links-loading");
 const linksEmpty = document.getElementById("links-empty");
 const linksError = document.getElementById("links-error");
 const linksTableWrap = document.getElementById("links-table-wrap");
 const linksTbody = document.getElementById("links-tbody");
 const linksMeta = document.getElementById("links-meta");
+
 const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
 const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
