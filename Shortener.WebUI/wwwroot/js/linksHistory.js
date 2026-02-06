@@ -17,37 +17,11 @@ function showToast(message) {
     toast.show();
 }
 
-function formatDate(value) {
-    if (!value) return "—";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "—";
-    return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function buildShortUrl(shortCode) {
-    return window.location.origin + "/" + shortCode;
-}
-
 function setVisibility(loading, empty, error, table) {
     linksLoading.classList.toggle("d-none", !loading);
     linksEmpty.classList.toggle("d-none", !empty);
     linksError.classList.toggle("d-none", !error);
     linksTableWrap.classList.toggle("d-none", !table);
-}
-
-async function loadLinks() {
-    setVisibility(true, false, false, false);
-    linksError.textContent = "";
-
-    try {
-        const response = await fetch(`${apiServerAddress}/links?excludeExpiredUrls=false`);
-        if (!response.ok) throw new Error("Не удалось загрузить список ссылок");
-        const data = await response.json();
-        renderLinks(data);
-    } catch (err) {
-        linksError.textContent = err.message || "Ошибка при загрузке списка ссылок.";
-        setVisibility(false, false, true, false);
-    }
 }
 
 function renderLinks(links) {
@@ -83,6 +57,22 @@ function renderLinks(links) {
     linksTbody.querySelectorAll(".btn-delete").forEach((btn) => {
         btn.addEventListener("click", handleDelete);
     });
+}
+
+async function loadLinks() {
+    setVisibility(true, false, false, false);
+    linksError.textContent = "";
+
+    try {
+        const response = await fetch(`${apiServerAddress}/links?excludeExpiredUrls=false`);
+        if (!response.ok) throw new Error("Не удалось загрузить список ссылок");
+        const data = await response.json();
+        renderLinks(data);
+    } catch (err) {
+        console.log(err);
+        linksError.textContent = err.message || "Ошибка при загрузке списка ссылок.";
+        setVisibility(false, false, true, false);
+    }
 }
 
 function escapeHtml(text) {

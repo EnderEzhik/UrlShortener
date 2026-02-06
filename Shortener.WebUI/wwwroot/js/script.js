@@ -18,6 +18,21 @@ function showToast(message) {
     toast.show();
 }
 
+function setResult(shortUrl, expiryValue) {
+    shortUrlInput.value = shortUrl;
+    copyBtn.disabled = !shortUrl;
+    meta.textContent = expiryValue ? "Истекает: " + formatDate(expiryValue) : "Без даты истечения";
+}
+
+function reset() {
+    form.classList.remove("was-validated");
+    originalUrlInput.value = "";
+    expiryInput.value = "";
+    shortUrlInput.value = "";
+    copyBtn.disabled = true;
+    meta.textContent = "";
+}
+
 async function createShortUrl(originalUrl, expiresDatetime) {
     const response = await fetch(`${apiServerAddress}/links`, {
         method: "POST",
@@ -30,17 +45,6 @@ async function createShortUrl(originalUrl, expiresDatetime) {
         })
     });
     return await response.json();
-}
-
-function buildShortUrl(shortCode) {
-    return window.location.origin + "/" + shortCode;
-}
-
-function formatExpiry(value) {
-    if (!value) return "";
-    const d = new Date(value);
-    if (Number.isNaN(d.getTime())) return "";
-    return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
 }
 
 function removeMilliseconds(dateTime) {
@@ -65,21 +69,6 @@ async function copyToClipboard(text) {
     tmp.select();
     document.execCommand("copy");
     document.body.removeChild(tmp);
-}
-
-function setResult(shortUrl, expiryValue) {
-    shortUrlInput.value = shortUrl;
-    copyBtn.disabled = !shortUrl;
-    meta.textContent = expiryValue ? "Истекает: " + formatExpiry(expiryValue) : "Без даты истечения";
-}
-
-function reset() {
-    form.classList.remove("was-validated");
-    originalUrlInput.value = "";
-    expiryInput.value = "";
-    shortUrlInput.value = "";
-    copyBtn.disabled = true;
-    meta.textContent = "";
 }
 
 resetBtn.addEventListener("click", () => {
@@ -111,7 +100,8 @@ form.addEventListener("submit", async (e) => {
         setResult(shortUrl, data["expiresAt"]);
         showToast("Короткая ссылка создана");
     }
-    catch (error) {
+    catch (err) {
+        console.log(err);
         showToast("Не удалось создать короткую ссылку");
     }
 });
