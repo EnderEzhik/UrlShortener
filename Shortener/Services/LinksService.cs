@@ -6,6 +6,7 @@ using Shortener.Data;
 using Shortener.Entities;
 using Shortener.Extensions;
 using Shortener.Models;
+using StackExchange.Redis;
 
 namespace Shortener.Services;
 
@@ -61,22 +62,45 @@ public class LinksService
 
     public async Task<ShortUrl?> GetShortUrlByShortCodeAsync(string shortCode)
     {
-        ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+        ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode
+                                                                       && (!url.ExpiresAt.HasValue || url.ExpiresAt > DateTime.UtcNow));
         return shortUrl;
     }
 
     public async Task<ShortUrl?> GetCachedShortUrlByShortCodeAsync(string shortCode)
     {
-        ShortUrl? shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
-        if (shortUrl is not null)
+        ShortUrl? shortUrl;
+        
+        try
         {
-            return shortUrl;
+            shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
+            if (shortUrl is not null)
+            {
+                logger.Information("ShortCode found in cache");
+                return shortUrl;
+            }
+            logger.Information("ShortCode not found in cache");
+        }
+        catch (RedisConnectionException e)
+        {
+            logger.Error("Redis connection error");
+            throw;
         }
         
+        logger.Information("Get shortCode from db");
         shortUrl = await GetShortUrlByShortCodeAsync(shortCode);
         if (shortUrl is not null)
         {
             await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
+        }
+
+        if (shortUrl is not null)
+        {
+            logger.Information("Short code found in db");
+        }
+        else
+        {
+            logger.Information("Short code found in db");
         }
 
         return shortUrl;

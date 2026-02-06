@@ -3,6 +3,7 @@ using Shortener.Entities;
 using Shortener.Models;
 using Shortener.Models.DTOs;
 using Shortener.Services;
+using StackExchange.Redis;
 
 namespace Shortener.Controllers;
 
@@ -28,6 +29,10 @@ public class LinksController : ControllerBase
             logger.Information("Short url successfully created. Short code: {shortCode}", shortUrl);
             return Ok(shortUrl);
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
         catch (Exception ex)
         {
             logger.Error(ex, "Unexpected error while creating new short url. Url: {url}", requestData.Url);
@@ -38,8 +43,20 @@ public class LinksController : ControllerBase
     [HttpGet("{shortCode}")]
     public async Task<ActionResult<ShortCodeResponse>> GetShortUrlByShortCode(string shortCode)
     {
-        ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
-        return shortUrl is not null ? Ok(shortUrl) : NotFound();
+        try
+        {
+            ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
+            return shortUrl is not null ? Ok(shortUrl) : NotFound();
+        }
+        catch (RedisConnectionException e)
+        {
+            return StatusCode(503);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            throw;
+        }
     }
 
     [HttpGet]
