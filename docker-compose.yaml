@@ -67,6 +67,7 @@ services:
             - ASPNETCORE_URLS=https://*:7001;http://*:5001
             - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
             - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+            - API_SERVER_ADDRESS=http://shortener:5000/api
         depends_on:
             database:
                 condition: service_healthy

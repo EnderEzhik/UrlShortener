@@ -10,7 +10,8 @@ public class Program
 
         builder.Services.AddHttpClient("shortener", client =>
         {
-            client.BaseAddress = new Uri("http://shortener:5000");
+            string apiServerAddress = builder.Configuration["API_SERVER_ADDRESS"] ?? throw new InvalidOperationException("API_SERVER_ADDRESS is missing");
+            client.BaseAddress = new Uri(apiServerAddress);
         });
         
         var app = builder.Build();
