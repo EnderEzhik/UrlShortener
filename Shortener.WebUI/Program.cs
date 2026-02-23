@@ -19,7 +19,9 @@ public class Program
         app.UseStaticFiles();
         
         app.MapGet("/", () => Results.File("index.html", "text/html"));
-        app.MapGet("/links-history", () => Results.File("linksHistory.html", "text/html"));
+        app.MapGet("/login", () => Results.File("login.html", "text/html"));
+        app.MapGet("/registration", () => Results.File("registration.html", "text/html"));
+        app.MapGet("/profile", () => Results.File("profile.html", "text/html"));
         app.MapGet("/error", () => Results.File("error.html", "text/html"));
 
         app.Use(async (context, next) =>
