@@ -198,3 +198,21 @@ body {
 .links-table .btn-delete {
     border-radius: 10px;
 }
+
+/* Личный кабинет: панель профиля слева */
+.account-panel {
+    align-self: start;
+}
+
+@media (min-width: 992px) {
+    .account-panel {
+        position: sticky;
+        top: 80px;
+    }
+}
+
+/* Список ссылок: прокрутка при переполнении */
+.links-list-overflow {
+    overflow: auto;
+    max-height: min(70vh, 520px);
+}
