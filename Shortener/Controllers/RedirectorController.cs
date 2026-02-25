@@ -7,9 +7,9 @@ namespace Shortener.Controllers;
 public class RedirectorController : ControllerBase
 {
     private readonly Serilog.ILogger logger = Serilog.Log.ForContext<RedirectorController>();
-    private readonly UrlService _urlService;
+    private readonly LinksService _urlService;
 
-    public RedirectorController(UrlService urlService)
+    public RedirectorController(LinksService urlService)
     {
         _urlService = urlService;
     }
@@ -21,15 +21,15 @@ public class RedirectorController : ControllerBase
         logger.Information("GET Request for redirect from short code");
         try
         {
-            var url = await _urlService.GetCachedOriginalUrlByShortCode(shortCode);
+            var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
             if (url is null)
             {
                 logger.Information("No original url for short code");
-                return NotFound();
+                return NotFound(new { message = "Short code not found or expired" });
             }
 
             logger.Information("Redirecting from short code");
-            return Redirect(url);
+            return Redirect(url.OriginalUrl);
         }
         catch (Exception e)
         {

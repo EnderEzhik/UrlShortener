@@ -57,6 +57,28 @@ services:
             - "7000:7000"
         volumes:
             - ./certificates:/https:ro
+    
+    shortener.web.ui:
+        build:
+            context: ./Shortener.WebUI
+            dockerfile: ./Dockerfile
+        container_name: shortener.web.ui
+        environment:
+            - ASPNETCORE_URLS=https://*:7001;http://*:5001
+            - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
+            - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+            - API_SERVER_ADDRESS=http://shortener:5000/api
+        depends_on:
+            database:
+                condition: service_healthy
+        networks:
+            - internal
+            - external
+        ports:
+            - "5001:5001"
+            - "7001:7001"
+        volumes:
+            -   ./certificates:/https:ro
 
 networks:
     internal:
