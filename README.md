@@ -23,6 +23,8 @@
 ```
 UrlShortener/                 # Solution
 ├── Shortener/                # Main API project
+│   ├── Common/               # Независимая от проекта бизнес логика
+│   │   └── Utils             # Вспомогательные методы
 │   ├── Controllers/          # Контроллеры API
 │   ├── Data/                 # Контекст БД
 │   ├── Entities/             # Сущности EF Core
@@ -33,7 +35,6 @@ UrlShortener/                 # Solution
 │   └── Dockerfile            # Docker образ API приложения
 ├── Shortener.WebUI/          # Frontend приложение
 │   ├── wwwroot/              # Статичные файлы (HTML, CSS, JS)
-│   ├── Program.cs            # Точка входа frontend приложения
 │   └── Dockerfile            # Docker образ frontend приложения
 ├── docker-compose.yaml       # Docker Compose конфигурация
 └── .env                      # Переменные окружения для Docker Compose
@@ -64,7 +65,7 @@ UrlShortener/                 # Solution
 - [X] **Stage 2:** Постоянное хранилище (PostgreSQL), Docker
 - [X] **Stage 3:** Логирование основных операций (Serilog)
 - [X] **Stage 4:** Кэширование (Redis) для производительности
-- [ ] **Stage 5:** Пользовательский интерфейс (Frontend)
+- [X] **Stage 5:** Пользовательский интерфейс (Frontend)
 - [ ] **Stage 6:** Аутентификация и личный кабинет
 - [ ] **Stage 7:** Продвинутые функции (кастомные alias, аналитика, TTL)
 
