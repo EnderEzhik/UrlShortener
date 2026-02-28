@@ -6,6 +6,7 @@ namespace Shortener.Data;
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> context) : DbContext(context)
 {
     public DbSet<ShortUrl>  Urls { get; set; }
+    public DbSet<User>  Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

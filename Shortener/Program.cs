@@ -79,6 +79,7 @@ public class Program
         });
         
         builder.Services.AddScoped<LinksService>();
+        builder.Services.AddScoped<UserService>();
         
         builder.Services.AddControllers();
     }
