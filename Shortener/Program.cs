@@ -1,4 +1,7 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Filters;
 using Shortener.Data;
@@ -8,6 +11,8 @@ namespace Shortener;
 
 public class Program
 {
+    public const string SECRET_KEY = "super_secrey_keysuper_secrey_key";//TODO: временная переменная для секретного ключа JWT на время проверок
+    
     public static void Main(string[] args)
     {
         ConfigureLogging();
@@ -23,6 +28,9 @@ public class Program
             Log.Information("Services configured");
 
             var app = builder.Build();
+            
+            app.UseAuthentication();
+            app.UseAuthorization();
 
             app.MapControllers();
             
@@ -80,6 +88,21 @@ public class Program
         
         builder.Services.AddScoped<LinksService>();
         builder.Services.AddScoped<UserService>();
+        builder.Services.AddScoped<JwtService>();
+
+        builder.Services.AddAuthorization();
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters()
+                {
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRET_KEY))
+                };
+            });
         
         builder.Services.AddControllers();
     }
