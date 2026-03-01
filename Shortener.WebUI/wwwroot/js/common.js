@@ -9,4 +9,14 @@ function buildShortUrl(shortCode) {
     return window.location.origin + "/" + shortCode;
 }
 
-export {formatDate, buildShortUrl};
+function hasAuthToken() {
+    if (localStorage.getItem("token")) {
+        return true;
+    }
+    if (sessionStorage.getItem("token")) {
+        return true;
+    }
+    return false;
+}
+
+export {formatDate, buildShortUrl, hasAuthToken };
