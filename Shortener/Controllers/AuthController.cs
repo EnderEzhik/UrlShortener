@@ -5,6 +5,7 @@ using Shortener.Services;
 namespace Shortener.Controllers;
 
 [ApiController]
+[Route("api")]
 public class AuthController : ControllerBase
 {
     private readonly UserService _userService;
@@ -17,18 +18,18 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult> Register(UserCreateRequest requestData)
+    public async Task<ActionResult<JWTTokenResponse>> Register(UserCreateRequest requestData)
     {
         try
         {
-            await _userService.CreateUser(requestData.Login, requestData.Password);
+            var newUser = await _userService.CreateUser(requestData.Login, requestData.Password);
+            var token = _jwtService.GenerateJwtToken(newUser);
+            return new JWTTokenResponse { Token = token };
         }
         catch (ArgumentException ex)
         {
             return BadRequest(ex.Message);
         }
-        
-        return Created();
     }
 
     [HttpPost("login")]
