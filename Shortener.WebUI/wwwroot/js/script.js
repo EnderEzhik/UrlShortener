@@ -21,7 +21,7 @@ function showToast(message) {
 function setResult(shortUrl, expiryValue) {
     shortUrlInput.value = shortUrl;
     copyBtn.disabled = !shortUrl;
-    meta.textContent = expiryValue ? "Истекает: " + formatDate(expiryValue) : "Без даты истечения";
+    meta.textContent = expiryValue ? "Истекает: " + formatDate(expiryValue) : "Без срока жизни";
 }
 
 function reset() {

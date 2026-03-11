@@ -19,4 +19,16 @@ function hasAuthToken() {
     return false;
 }
 
-export {formatDate, buildShortUrl, hasAuthToken };
+function getAuthToken() {
+    let token = localStorage.getItem("token");
+    if (token) {
+        return JSON.parse(token).token;
+    }
+    token = sessionStorage.getItem("token");
+    if (token) {
+        return JSON.parse(token).token;
+    }
+    return null;
+}
+
+export {formatDate, buildShortUrl, hasAuthToken, getAuthToken };
