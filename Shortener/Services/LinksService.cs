@@ -60,7 +60,7 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<ShortUrl?> GetShortUrlByShortCodeAsync(string shortCode)
+    public async Task<ShortUrl?> GetUrlByShortCodeAsync(string shortCode)
     {
         ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode
                                                                        && (!url.ExpiresAt.HasValue || url.ExpiresAt > DateTime.UtcNow));
@@ -84,29 +84,24 @@ public class LinksService
         catch (RedisConnectionException e)
         {
             logger.Error("Redis connection error");
-            throw;
         }
         
         logger.Information("Get shortCode from db");
-        shortUrl = await GetShortUrlByShortCodeAsync(shortCode);
+        shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is not null)
         {
             await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
-        }
-
-        if (shortUrl is not null)
-        {
             logger.Information("Short code found in db");
         }
         else
         {
-            logger.Information("Short code found in db");
+            logger.Information("Short code not found in db");
         }
 
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetAllShortUrlsAsync(string? containsSubstring, bool excludeExpiredUrls = true)
+    public async Task<List<ShortUrl>> GetAllShortUrlsAsync(string? containsSubstring = null, bool excludeExpiredUrls = true)
     {
         var query = _db.Urls.AsQueryable();
         if (containsSubstring is not null)
@@ -124,7 +119,7 @@ public class LinksService
 
     public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode)
     {
-        ShortUrl? shortUrl = await GetShortUrlByShortCodeAsync(shortCode);
+        ShortUrl? shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is null)
         {
             return false;

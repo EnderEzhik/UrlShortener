@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortener.Entities;
 using Shortener.Models;
@@ -63,6 +64,14 @@ public class LinksController : ControllerBase
     public async Task<ActionResult<List<ShortCodeResponse>>> GetAllShortUrls([FromQuery] UrlsFiltersRequest filters)
     {
         var shortUrlList = await _linksService.GetAllShortUrlsAsync(filters.containsSubstring, filters.excludeExpiredUrls);
+        return Ok(shortUrlList);
+    }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<List<ShortUrl>>> GetUserShortUrls()
+    {
+        var shortUrlList = await _linksService.GetAllShortUrlsAsync();
         return Ok(shortUrlList);
     }
 
