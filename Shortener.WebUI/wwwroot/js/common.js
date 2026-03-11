@@ -9,11 +9,44 @@ function buildShortUrl(shortCode) {
     return window.location.origin + "/" + shortCode;
 }
 
+function checkTokenExpiration(jwtToken) {
+    const tokenParts = jwtToken.split(".");
+
+    if (tokenParts.length !== 3) {
+        console.warn("Неверный формат JWT токена");
+        return false;
+    }
+
+    const payload = JSON.parse(atob(tokenParts[1]));
+
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    if (payload.exp < currentTime) {
+        console.log("Срок действия токена истек");
+        return false;
+    }
+
+    console.log("Токен действителен");
+    return true;
+}
+
 function hasAuthToken() {
-    if (localStorage.getItem("token")) {
+    let tokenData = localStorage.getItem("token");
+    if (tokenData) {
+        const token = JSON.parse(tokenData).token;
+        if (!checkTokenExpiration(token)) {
+            localStorage.removeItem("token");
+            return false;
+        }
         return true;
     }
-    if (sessionStorage.getItem("token")) {
+    tokenData = sessionStorage.getItem("token");
+    if (tokenData) {
+        const token = JSON.parse(tokenData).token;
+        if (!checkTokenExpiration(token)) {
+            sessionStorage.removeItem("token");
+            return false;
+        }
         return true;
     }
     return false;
@@ -31,4 +64,4 @@ function getAuthToken() {
     return null;
 }
 
-export {formatDate, buildShortUrl, hasAuthToken, getAuthToken };
+export { formatDate, buildShortUrl, hasAuthToken, getAuthToken };
