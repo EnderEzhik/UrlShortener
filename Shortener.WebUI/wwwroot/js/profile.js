@@ -1,11 +1,15 @@
 import {apiServerAddress} from "./config.js";
 import {getAuthToken, buildShortUrl} from "./common.js";
 
-const urlsLoadingIndicator = document.getElementById("links-loading"); // Индикатор загрузки списка ссылок
-const urlsLoadingErrorIndicator = document.getElementById("links-error"); // Индикатор ошибки при неудачной загрузки ссылок
-const urlsContainer = document.getElementById("links-table-wrap"); // Контейнер со списком ссылок при их удачной загрузки и не пустом списке ссылок
-const urlsEmptyContainer = document.getElementById("links-empty"); // Индикатор пустого списка ссылок
-
+const urlsContainer = {
+    self: document.getElementById("urls-container"),
+    loadingIndicator: document.getElementById("urls-loading"),
+    errorIndicator: document.getElementById("urls-error"),
+    emptyIndicator: document.getElementById("urls-empty"),
+    urlsTable: document.getElementById("urls-table-wrap"),
+    urlsTableBody: document.getElementById("urls-tbody"),
+    childs: document.getElementById("urls-container").children
+};
 const linksList = document.getElementById("links-tbody"); // Сам список ссылок
 
 const urlsContainerElements = document.getElementById("urlsContainer").children; // Индикаторы отображения состояния списка ссылок
@@ -24,7 +28,7 @@ function showUrlsContainerElement(element) {
         element.classList.remove("d-none");
     }
 
-    for (const item of urlsContainerElements) {
+    for (const item of urlsContainer.childs) {
         if (item !== element) {
             if (!item.classList.contains("d-none")) {
                 item.classList.add("d-none");
@@ -107,17 +111,17 @@ function createTableRow(originalUrl, shortCode, createdAt, expiresAt) {
 
 function showUrls(urlsList) {
     if (urlsList.length === 0) {
-        showUrlsContainerElement(urlsEmptyContainer);
+        showUrlsContainerElement(urlsContainer.emptyIndicator);
         return;
     }
     
     urlsList.reverse();
     for (const url of urlsList) {
         const row = createTableRow(url.originalUrl, url.shortCode, url.createdAt, url.expiresAt);
-        linksList.append(row);
+        urlsContainer.urlsTableBody.append(row);
     }
 
-    showUrlsContainerElement(urlsContainer);
+    showUrlsContainerElement(urlsContainer.urlsTable);
 }
 
 async function loadUserUrls() {
@@ -131,7 +135,7 @@ async function loadUserUrls() {
         });
         if (!response.ok) {
             console.warn(response);
-            showUrlsContainerElement(urlsLoadingErrorIndicator);
+            showUrlsContainerElement(urlsContainer.errorIndicator);
             return;
         }
         
@@ -140,7 +144,7 @@ async function loadUserUrls() {
     }
     catch (error) {
         console.error(error);
-        showUrlsContainerElement(urlsLoadingErrorIndicator);
+        showUrlsContainerElement(urlsContainer.errorIndicator);
     }
 }
 
