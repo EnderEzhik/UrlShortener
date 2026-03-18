@@ -53,6 +53,9 @@ async function deleteUrl(shortCode) {
             return;
         }
         deleteUrlFromUI(shortCode);
+        if (urlsContainer.urlsTableBody.rows.length === 0) {
+            showUrlsContainerElement(urlsContainer.emptyIndicator);
+        }
     }
     catch (error) {
         console.error(error);
