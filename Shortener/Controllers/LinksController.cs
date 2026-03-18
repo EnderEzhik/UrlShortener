@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortener.Entities;
@@ -26,7 +27,13 @@ public class LinksController : ControllerBase
         logger.Information("Create short url request. Url: {url}", requestData.Url);
         try
         {
-            var shortUrl = await _linksService.CreateShortUrlAsync(requestData);
+            int? parsedUserId = null;
+            if (HttpContext.User.Identity?.IsAuthenticated == true)
+            {
+                var userId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+                parsedUserId = userId is not null ? int.Parse(userId) : null;
+            }
+            var shortUrl = await _linksService.CreateShortUrlAsync(parsedUserId, requestData);
             logger.Information("Short url successfully created. Short code: {shortCode}", shortUrl);
             return Ok(shortUrl);
         }
@@ -60,18 +67,17 @@ public class LinksController : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<ShortUrl>>> GetShortUrlsWithFilters([FromQuery] UrlsFiltersRequest filters)
     {
-        var shortUrlList = await _linksService.GetAllShortUrlsAsync(filters.containsSubstring, filters.excludeExpiredUrls);
-        return Ok(shortUrlList);
-    }
-
-    [Authorize]
-    [HttpGet("me")]
-    public async Task<ActionResult<List<ShortUrl>>> GetUserShortUrls()
-    {
-        var shortUrlList = await _linksService.GetAllShortUrlsAsync();
+        var userId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        if (!int.TryParse(userId, out int parsedUserId))
+        {
+            return Unauthorized();
+        }
+        
+        var shortUrlList = await _linksService.GetShortUrlsWithFiltersAsync(parsedUserId, filters.ContainsSubstring, filters.ExcludeExpiredUrls);
         return Ok(shortUrlList);
     }
 

@@ -10,9 +10,6 @@ const urlsContainer = {
     urlsTableBody: document.getElementById("urls-tbody"),
     childs: document.getElementById("urls-container").children
 };
-const linksList = document.getElementById("links-tbody"); // Сам список ссылок
-
-const urlsContainerElements = document.getElementById("urlsContainer").children; // Индикаторы отображения состояния списка ссылок
 
 const profileContainer = {
     self: document.getElementById("profile-container"),
@@ -126,7 +123,7 @@ function showUrls(urlsList) {
 
 async function loadUserUrls() {
     try {
-        const response = await fetch(apiServerAddress + "/links/me", {
+        const response = await fetch(apiServerAddress + "/links", {
             method: "GET",
             headers: {
                 "Authorization": `Bearer ${getAuthToken()}`,

@@ -23,7 +23,7 @@ public class LinksService
         _cache = cache;
     }
 
-    public async Task<ShortUrl> CreateShortUrlAsync(CreateShortUrlRequest request)
+    public async Task<ShortUrl> CreateShortUrlAsync(int? userId, CreateShortUrlRequest request)
     {
         logger.Information("Generating short code");
 
@@ -40,7 +40,8 @@ public class LinksService
         {
             OriginalUrl = request.Url,
             ShortCode = shortCode,
-            ExpiresAt = request.ExpiresAt
+            ExpiresAt = request.ExpiresAt,
+            UserId = userId
         };
         
         logger.Information("Saving short url to database. Short code: {shortCode}", shortUrl);
@@ -101,16 +102,20 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetAllShortUrlsAsync(string? containsSubstring = null, bool excludeExpiredUrls = true)
+    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(int? userId, string? containsSubstring, bool excludeExpiredUrls)
     {
         var query = _db.Urls.AsQueryable();
+        if (userId.HasValue)
+        {
+            query = query.Where(url => url.UserId == userId.Value);
+        }
         if (containsSubstring is not null)
         {
             query = query.Where(url => url.OriginalUrl.Contains(containsSubstring));
         }
         if (excludeExpiredUrls)
         {
-            query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTime.Now);
+            query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTimeOffset.UtcNow);
         }
         
         List<ShortUrl> shortUrls = await query.ToListAsync();

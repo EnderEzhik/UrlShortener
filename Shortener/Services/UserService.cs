@@ -38,6 +38,12 @@ public class UserService
         return newUser;
     }
 
+    public async Task<User?> GetUserById(int userId)
+    {
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        return user;
+    }
+
     public async Task<User?> GetUser(string login)
     {
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login);
