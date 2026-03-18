@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortener.Models.DTOs;
@@ -20,8 +21,9 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
-        var currentUserLogin = HttpContext.User.Identity.Name;
-        var currentUser = await _userService.GetUser(currentUserLogin);
+        var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        var parsedUserId = int.Parse(currentUserId);
+        var currentUser = await _userService.GetUserById(parsedUserId);
         var userResponse = new UserResponse()
         {
             Username = currentUser.Login,

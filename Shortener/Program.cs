@@ -5,14 +5,13 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Filters;
 using Shortener.Data;
+using Shortener.Options;
 using Shortener.Services;
 
 namespace Shortener;
 
 public class Program
 {
-    public const string SECRET_KEY = "super_secrey_keysuper_secrey_key";//TODO: временная переменная для секретного ключа JWT на время проверок
-    
     public static void Main(string[] args)
     {
         ConfigureLogging();
@@ -85,22 +84,34 @@ public class Program
             options.Configuration = redisConnectionString;
             options.InstanceName = "UrlShortener_";
         });
+
+        builder.Services.ConfigureOptions<JwtOptionsSetup>();
         
         builder.Services.AddScoped<LinksService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<JwtService>();
 
+        var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
+                         ?? throw new InvalidOperationException("Jwt options are not configured. Missing 'Jwt' section in configuration.");
+
         builder.Services.AddAuthorization();
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        builder.Services.AddAuthentication(o =>
+            {
+                o.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                o.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
             .AddJwtBearer(options =>
             {
+                options.MapInboundClaims = false;
                 options.TokenValidationParameters = new TokenValidationParameters()
                 {
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SECRET_KEY))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
                 };
             });
         

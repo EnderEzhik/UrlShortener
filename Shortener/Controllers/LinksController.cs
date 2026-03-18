@@ -21,7 +21,7 @@ public class LinksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ShortCodeResponse>> CreateShortUrl(CreateShortUrlRequest requestData)
+    public async Task<ActionResult<ShortUrl>> CreateShortUrl(CreateShortUrlRequest requestData)
     {
         logger.Information("Create short url request. Url: {url}", requestData.Url);
         try
@@ -42,7 +42,7 @@ public class LinksController : ControllerBase
     }
 
     [HttpGet("{shortCode}")]
-    public async Task<ActionResult<ShortCodeResponse>> GetShortUrlByShortCode(string shortCode)
+    public async Task<ActionResult<ShortUrl>> GetShortUrlByShortCode(string shortCode)
     {
         try
         {
@@ -61,7 +61,7 @@ public class LinksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<ShortCodeResponse>>> GetAllShortUrls([FromQuery] UrlsFiltersRequest filters)
+    public async Task<ActionResult<List<ShortUrl>>> GetShortUrlsWithFilters([FromQuery] UrlsFiltersRequest filters)
     {
         var shortUrlList = await _linksService.GetAllShortUrlsAsync(filters.containsSubstring, filters.excludeExpiredUrls);
         return Ok(shortUrlList);

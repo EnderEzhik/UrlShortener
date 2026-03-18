@@ -2,6 +2,6 @@ namespace Shortener.Models.DTOs;
 
 public class UrlsFiltersRequest
 {
-    public string? containsSubstring { get; set; }
-    public bool excludeExpiredUrls { get; set; } = true;
+    public string? ContainsSubstring { get; set; } = null;
+    public bool ExcludeExpiredUrls { get; set; } = true;
 }
