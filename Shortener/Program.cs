@@ -18,23 +18,21 @@ public class Program
 
         try
         {
-            Log.Information("Starting up");
+            Log.Information("Application starting");
             
             var builder = WebApplication.CreateBuilder(args);
-            builder.Services.AddSerilog();
 
             ConfigureServices(builder);
-            Log.Information("Services configured");
 
             var app = builder.Build();
+            
+            app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
             
-            app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
-
             Log.Information("Application started");
             app.Run();
         }
@@ -44,6 +42,7 @@ public class Program
         }
         finally
         {
+            Log.Information("Application stopped");
             Log.CloseAndFlush();
         }
     }
@@ -51,7 +50,7 @@ public class Program
     private static void ConfigureLogging()
     {
         Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Information()
+            .MinimumLevel.Debug()
             .Enrich.FromLogContext()
             .WriteTo.File(
                 path: "logs/all/shortener-all.log",
@@ -73,6 +72,8 @@ public class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
+        builder.Services.AddSerilog();
+        
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
@@ -116,5 +117,7 @@ public class Program
             });
         
         builder.Services.AddControllers();
+        
+        Log.Information("Services configured");
     }
 }

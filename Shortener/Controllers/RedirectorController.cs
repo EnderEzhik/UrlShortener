@@ -14,26 +14,26 @@ public class RedirectorController : ControllerBase
         _urlService = urlService;
     }
     
-    // Переадресация с сокращенного кода на оригинальную ссылку
     [HttpGet("{shortCode}")]
     public async Task<IActionResult> RedirectFromShortCode(string shortCode)
     {
-        logger.Information("GET Request for redirect from short code");
+        logger.Information("Get Request for redirect from short code");
+        
         try
         {
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
             if (url is null)
             {
-                logger.Information("No original url for short code");
-                return NotFound(new { message = "Short code not found or expired" });
+                return NotFound(new
+                {
+                    message = "Short code not found or expired"
+                });
             }
 
-            logger.Information("Redirecting from short code");
             return Redirect(url.OriginalUrl);
         }
-        catch (Exception e)
+        catch (Exception)
         {
-            logger.Error(e, "Error redirecting. Error: {ErrorMessage}", e.Message);
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }

@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Shortener.Models.DTOs;
 using Shortener.Services;
 
@@ -10,6 +11,7 @@ namespace Shortener.Controllers;
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
+    private readonly Serilog.ILogger logger = Log.ForContext<UsersController>();
     private readonly UserService _userService;
     
     public UsersController(UserService userService)
@@ -21,14 +23,24 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
+        logger.Information("Get request for get user me");
+        
         var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         var parsedUserId = int.Parse(currentUserId);
-        var currentUser = await _userService.GetUserById(parsedUserId);
-        var userResponse = new UserResponse()
+        
+        try
         {
-            Username = currentUser.Login,
-            RegistrationDate = currentUser.RegistrationAt
-        };
-        return userResponse;
+            var currentUser = await _userService.GetUserById(parsedUserId);
+            var userResponse = new UserResponse()
+            {
+                Username = currentUser.Login,
+                RegistrationDate = currentUser.RegistrationAt
+            };
+            return userResponse;
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 }

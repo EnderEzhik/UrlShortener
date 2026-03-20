@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 using Serilog;
 using Shortener.Common.Utils;
 using Shortener.Data;
 using Shortener.Entities;
 using Shortener.Extensions;
-using Shortener.Models;
-using StackExchange.Redis;
 
 namespace Shortener.Services;
 
@@ -23,53 +22,61 @@ public class LinksService
         _cache = cache;
     }
 
-    public async Task<ShortUrl> CreateShortUrlAsync(int? userId, CreateShortUrlRequest request)
+    public async Task<ShortUrl> CreateShortUrlAsync(int? userId, string url, DateTimeOffset? expiresAt)
     {
-        logger.Information("Generating short code");
-
-        if (request.ExpiresAt <= DateTime.UtcNow)
-        {
-            logger.Information("Expires must be in the future");
-            throw new ArgumentException("Expires must be in the future");
-        }
+        logger.Information("Creating new ShortUrl");
         
+        logger.Information("Generating short code");
         string shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
         logger.Information("Short code generated: {shortCode}", shortCode);
 
-        ShortUrl shortUrl = new ShortUrl()
+        var shortUrl = new ShortUrl()
         {
-            OriginalUrl = request.Url,
+            OriginalUrl = url,
             ShortCode = shortCode,
-            ExpiresAt = request.ExpiresAt,
+            ExpiresAt = expiresAt,
             UserId = userId
         };
         
-        logger.Information("Saving short url to database. Short code: {shortCode}", shortUrl);
-
+        _db.Urls.Add(shortUrl);
+        
+        logger.Information("Saving ShortUrl to database");
+        
         try
         {
-            _db.Urls.Add(shortUrl);
             await _db.SaveChangesAsync();
-            logger.Information("Short url saved successfully. Short code: {shortCode}", shortUrl);
+            logger.Information("successfully saved ShortUrl to database");
+            return shortUrl;
         }
         catch (Exception e)
         {
-            logger.Error(e, "Database error while saving short url. Url: {url}, Short code: {shortCode}", request.Url, shortUrl);
+            logger.Error(e, "Error when saving ShortUrl to database");
             throw;
         }
-        
-        return shortUrl;
     }
 
     public async Task<ShortUrl?> GetUrlByShortCodeAsync(string shortCode)
     {
-        ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode
-                                                                       && (!url.ExpiresAt.HasValue || url.ExpiresAt > DateTime.UtcNow));
-        return shortUrl;
+        logger.Information("Searching ShortUrl in database");
+        try
+        {
+            ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode
+                                                                           && (!url.ExpiresAt.HasValue ||
+                                                                               url.ExpiresAt > DateTime.UtcNow));
+            logger.Information("ShortUrl found in database: {shortUrlFound}", shortUrl is not null);
+            return shortUrl;
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error when searching ShortUrl in database");
+            throw;
+        }
     }
 
     public async Task<ShortUrl?> GetCachedShortUrlByShortCodeAsync(string shortCode)
     {
+        logger.Information("Searching ShortUrl in cache");
+        
         ShortUrl? shortUrl;
         
         try
@@ -77,63 +84,98 @@ public class LinksService
             shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
             if (shortUrl is not null)
             {
-                logger.Information("ShortCode found in cache");
+                logger.Information("ShortUrl found in cache");
                 return shortUrl;
             }
-            logger.Information("ShortCode not found in cache");
+            logger.Information("ShortUrl not found in cache");
         }
         catch (RedisConnectionException e)
         {
-            logger.Error("Redis connection error");
+            logger.Error(e, "Error when searching ShortUrl in cache");
         }
         
-        logger.Information("Get shortCode from db");
         shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is not null)
         {
-            await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
-            logger.Information("Short code found in db");
-        }
-        else
-        {
-            logger.Information("Short code not found in db");
+            logger.Information("Saving ShortUrl to cache");
+            try
+            {
+                await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
+                logger.Information("successfully saved ShortUrl to cache");
+            }
+            catch (RedisConnectionException e)
+            {
+                logger.Error(e, "Error when saving ShortUrl to cache");
+            }
         }
 
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(int? userId, string? containsSubstring, bool excludeExpiredUrls)
+    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(int? userId, bool excludeExpiredUrls)
     {
+        logger.Information("Getting ShortUrl list in database with filters");
         var query = _db.Urls.AsQueryable();
         if (userId.HasValue)
         {
             query = query.Where(url => url.UserId == userId.Value);
-        }
-        if (containsSubstring is not null)
-        {
-            query = query.Where(url => url.OriginalUrl.Contains(containsSubstring));
         }
         if (excludeExpiredUrls)
         {
             query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTimeOffset.UtcNow);
         }
         
-        List<ShortUrl> shortUrls = await query.ToListAsync();
-        return shortUrls;
+        try
+        {
+            List<ShortUrl> shortUrls = await query.ToListAsync();
+            logger.Information("Found in database: {countShortUrls} ShortUrl", shortUrls.Count);
+            return shortUrls;
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error when searching ShortUrl list with filters");
+            throw;
+        }
     }
 
     public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode)
     {
+        logger.Information("Searching ShortUrl to delete");
         ShortUrl? shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is null)
         {
+            logger.Information("ShortUrl not found");
             return false;
         }
         
-        await _cache.RemoveAsync(shortCode);
+        logger.Information("ShortUrl found");
+        logger.Information("Deleting ShortUrl from cache");
+
+        try
+        {
+            await _cache.RemoveAsync(shortCode);
+            logger.Information("ShortUrl deleted from cache");
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error when deleting ShortUrl from database");
+            throw;
+        }
         
+        logger.Information("Deleting ShortUrl from database");
+
         _db.Urls.Remove(shortUrl);
-        await _db.SaveChangesAsync();
-        return true;
+        
+        try
+        {
+            await _db.SaveChangesAsync();
+            logger.Information("ShortUrl deleted from database");
+            return true;
+        }
+        catch (Exception e)
+        {
+            logger.Error(e, "Error when deleting ShortUrl from database");
+            throw;
+        }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Shortener.Models.DTOs;
 using Shortener.Services;
 
@@ -8,6 +9,7 @@ namespace Shortener.Controllers;
 [Route("api")]
 public class AuthController : ControllerBase
 {
+    private readonly Serilog.ILogger logger = Log.ForContext<AuthController>();
     private readonly UserService _userService;
     private readonly JwtService _jwtService;
     
@@ -20,28 +22,54 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<JWTTokenResponse>> Register(UserCreateRequest requestData)
     {
+        logger.Information("Post request for register user");
+        
+        if (string.IsNullOrWhiteSpace(requestData.Login) || requestData.Password.Length < 8)
+        {
+            logger.Warning("Password length is less than 8");
+            return BadRequest(new
+            {
+                message = "Password must contain at least 8 characters"
+            });
+        }
+        
         try
         {
             var newUser = await _userService.CreateUser(requestData.Login, requestData.Password);
+            logger.Information("New user created");
+
+            logger.Information("Generating jwt token");
             var token = _jwtService.GenerateJwtToken(newUser);
+            logger.Information("Successfully generated jwt token");
+
             return new JWTTokenResponse { Token = token };
         }
-        catch (ArgumentException ex)
+        catch (Exception)
         {
-            return BadRequest(ex.Message);
+            return StatusCode(StatusCodes.Status500InternalServerError);
         }
     }
 
     [HttpPost("login")]
     public async Task<ActionResult<JWTTokenResponse>> Login(LoginRequest loginData)
     {
-        var user = await _userService.GetUser(loginData.Login);
-        if (user is null || user.Password != loginData.Password)
+        logger.Information("Post request for login");
+        try
         {
-            return Unauthorized();
-        }
+            var user = await _userService.GetUserByLogin(loginData.Login);
+            if (user is null || user.Password != loginData.Password)
+            {
+                return Unauthorized();
+            }
 
-        var token = _jwtService.GenerateJwtToken(user);
-        return new JWTTokenResponse { Token = token };
+            logger.Information("Generating jwt token");
+            var token = _jwtService.GenerateJwtToken(user);
+            logger.Information("Successfully generated jwt token");
+            return new JWTTokenResponse { Token = token };
+        }
+        catch (Exception)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 }
