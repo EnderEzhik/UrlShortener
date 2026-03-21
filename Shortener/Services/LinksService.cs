@@ -60,9 +60,7 @@ public class LinksService
         logger.Information("Searching ShortUrl in database");
         try
         {
-            ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode
-                                                                           && (!url.ExpiresAt.HasValue ||
-                                                                               url.ExpiresAt > DateTime.UtcNow));
+            ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
             logger.Information("ShortUrl found in database: {shortUrlFound}", shortUrl is not null);
             return shortUrl;
         }
@@ -138,17 +136,21 @@ public class LinksService
         }
     }
 
-    public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode)
+    public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode, int userId)
     {
         logger.Information("Searching ShortUrl to delete");
         ShortUrl? shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is null)
         {
-            logger.Information("ShortUrl not found");
             return false;
         }
         
-        logger.Information("ShortUrl found");
+        if (shortUrl.UserId != userId)
+        {
+            logger.Warning("User is trying to delete ShortUrl that is not his own");
+            return false;
+        }
+        
         logger.Information("Deleting ShortUrl from cache");
 
         try

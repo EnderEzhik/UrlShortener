@@ -113,13 +113,18 @@ public class LinksController : ControllerBase
         }
     }
 
+    [Authorize]
     [HttpDelete("{shortCode}")]
     public async Task<ActionResult> DeleteShortUrlByShortCode(string shortCode)
     {
+        logger.Information("Delete request for delete ShortUrl");
+        
+        var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        var parsedUserId = int.Parse(currentUserId);
+        
         try
         {
-            logger.Information("Delete request for delete ShortUrl");
-            bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode);
+            bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, parsedUserId);
             return result ? NoContent() : NotFound();
         }
         catch (Exception)
