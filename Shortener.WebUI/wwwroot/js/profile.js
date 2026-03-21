@@ -20,6 +20,11 @@ const profileContainer = {
     registrationDate: document.getElementById("profile-registration-date")
 };
 
+const urlsShowExpiredCheckbox = document.getElementById("urls-show-expired");
+
+let urlsCacheActive = null;
+let urlsCacheAll = null;
+
 function showUrlsContainerElement(element) {
     if (element.classList.contains("d-none")) {
         element.classList.remove("d-none");
@@ -53,6 +58,8 @@ async function deleteUrl(shortCode) {
             return;
         }
         deleteUrlFromUI(shortCode);
+        if (urlsCacheActive) urlsCacheActive = urlsCacheActive.filter(u => u.shortCode !== shortCode);
+        if (urlsCacheAll) urlsCacheAll = urlsCacheAll.filter(u => u.shortCode !== shortCode);
         if (urlsContainer.urlsTableBody.rows.length === 0) {
             showUrlsContainerElement(urlsContainer.emptyIndicator);
         }
@@ -110,13 +117,13 @@ function createTableRow(originalUrl, shortCode, createdAt, expiresAt) {
 }
 
 function showUrls(urlsList) {
+    urlsContainer.urlsTableBody.innerHTML = "";
     if (urlsList.length === 0) {
         showUrlsContainerElement(urlsContainer.emptyIndicator);
         return;
     }
-    
-    urlsList.reverse();
-    for (const url of urlsList) {
+
+    for (const url of [...urlsList].reverse()) {
         const row = createTableRow(url.originalUrl, url.shortCode, url.createdAt, url.expiresAt);
         urlsContainer.urlsTableBody.append(row);
     }
@@ -124,23 +131,59 @@ function showUrls(urlsList) {
     showUrlsContainerElement(urlsContainer.urlsTable);
 }
 
+async function fetchUserLinks(excludeExpired) {
+    const url = excludeExpired
+        ? apiServerAddress + "/links"
+        : apiServerAddress + "/links?ExcludeExpiredUrls=false";
+    const response = await fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${getAuthToken()}`,
+            "Content-Type": "application/json"
+        }
+    });
+    return response;
+}
+
 async function loadUserUrls() {
     try {
-        const response = await fetch(apiServerAddress + "/links", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${getAuthToken()}`,
-                "Content-Type": "application/json"
-            }
-        });
+        const response = await fetchUserLinks(true);
         if (!response.ok) {
             console.warn(response);
             showUrlsContainerElement(urlsContainer.errorIndicator);
             return;
         }
-        
+
         const urls = await response.json();
-        showUrls(urls);
+        urlsCacheActive = urls;
+        urlsShowExpiredCheckbox.disabled = false;
+        if (urlsShowExpiredCheckbox.checked) {
+            await ensureUrlsAllLoaded();
+        } else {
+            showUrls(urls);
+        }
+    }
+    catch (error) {
+        console.error(error);
+        showUrlsContainerElement(urlsContainer.errorIndicator);
+    }
+}
+
+async function ensureUrlsAllLoaded() {
+    if (urlsCacheAll) {
+        showUrls(urlsCacheAll);
+        return;
+    }
+    try {
+        showUrlsContainerElement(urlsContainer.loadingIndicator);
+        const response = await fetchUserLinks(false);
+        if (!response.ok) {
+            console.warn(response);
+            showUrlsContainerElement(urlsContainer.errorIndicator);
+            return;
+        }
+        urlsCacheAll = await response.json();
+        showUrls(urlsCacheAll);
     }
     catch (error) {
         console.error(error);
@@ -182,4 +225,14 @@ async function loadUserProfile() {
 document.addEventListener("DOMContentLoaded", () => {
     loadUserUrls();
     loadUserProfile();
+
+    urlsShowExpiredCheckbox.addEventListener("change", () => {
+        if (urlsShowExpiredCheckbox.checked) {
+            ensureUrlsAllLoaded();
+        } else if (urlsCacheActive) {
+            showUrls(urlsCacheActive);
+        } else {
+            loadUserUrls();
+        }
+    });
 });
