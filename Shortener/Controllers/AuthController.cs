@@ -23,8 +23,16 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<JWTTokenResponse>> Register(UserCreateRequest requestData)
     {
         logger.Information("Post request for register user");
-        
-        if (string.IsNullOrWhiteSpace(requestData.Login) || requestData.Password.Length < 8)
+
+        if (requestData.Login.Length < 4)
+        {
+            logger.Warning("Password length is less than 4");
+            return BadRequest(new
+            {
+                message = "Login must contain at least 4 characters"
+            });
+        }
+        if (requestData.Password.Length < 8)
         {
             logger.Warning("Password length is less than 8");
             return BadRequest(new
