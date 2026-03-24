@@ -1,6 +1,6 @@
 namespace Shortener.Models.DTOs;
 
-public class ShortUrlInfoResponse
+public class ShortUrlResponse
 {
     public string OriginalUrl { get; set; }
     public string ShortCode { get; set; }

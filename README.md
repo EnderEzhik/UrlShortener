@@ -28,14 +28,18 @@ UrlShortener/                 # Solution
 │   ├── Controllers/          # Контроллеры API
 │   ├── Data/                 # Контекст БД
 │   ├── Entities/             # Сущности EF Core
-│   ├── Models/               # Модели данных
-│   │   └── DTOs/             # DTO-ответы
-│   ├── Services/             # Бизнес-логика (сервисы)
 │   ├── Extensions/           # Методы расширения
-│   └── Dockerfile            # Docker образ API приложения
+│   ├── Migrations/           # Миграции ef core
+│   ├── Models/               # Модели данных
+│   │   └── DTOs/             # DTO-классы для запросов/ответов API
+│   ├── Options/              # Bind-классы для конфигураций
+│   ├── Services/             # Сервисы (бизнес-логика)
+│   └── Dockerfile            # Docker файл API приложения
 ├── Shortener.WebUI/          # Frontend приложение
 │   ├── wwwroot/              # Статичные файлы (HTML, CSS, JS)
-│   └── Dockerfile            # Docker образ frontend приложения
+│   │   ├── css               # Css стили
+│   │   └── js                # Javascript
+│   └── Dockerfile            # Docker файл frontend приложения
 ├── docker-compose.yaml       # Docker Compose конфигурация
 └── .env                      # Переменные окружения для Docker Compose
 ```
@@ -44,20 +48,31 @@ UrlShortener/                 # Solution
 
 1. **Клонируйте репозиторий:**
     ```bash
-    git clone https://github.com/enderezhik/UrlShortener.git
-    cd UrlShortener
+    git clone https://github.com/EnderEzhik/UrlShortener.git
+    cd ./UrlShortener
     ```
 
 2. **Заполните .env файл по примеру из example.env**
 
-3. **Запустите приложение с PostgreSQL и Redis:**
+3. **Создайте образ PostgreSQL:**
    ```bash
-   docker-compose up --build
+   docker-compose up -d database
    ```
 
-4. Приложения будут доступны по адресам:
-    - **API:** https://localhost:7000 (или http://localhost:5000)
-    - **Frontend (Web UI):** https://localhost:7001 (или http://localhost:5001)
+3. **Примените миграции к базе данных:**
+   ```bash
+   cd ./Shortener
+   dotnet ef database update  --connection Host=localhost;Port=6666;Database=url_shortener;Username=postgres;Password=postgres
+   ```
+
+4. **Запустите приложение с PostgreSQL и Redis:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+5. **Приложения будут доступны по адресам:**
+    - **API:** http://localhost:5001
+    - **Frontend (Web UI):** http://localhost:5000
 
 ## 🗺 Дорожная карта (Roadmap)
 
@@ -66,7 +81,7 @@ UrlShortener/                 # Solution
 - [X] **Stage 3:** Логирование основных операций (Serilog)
 - [X] **Stage 4:** Кэширование (Redis) для производительности
 - [X] **Stage 5:** Пользовательский интерфейс (Frontend)
-- [ ] **Stage 6:** Аутентификация и личный кабинет
+- [X] **Stage 6:** Аутентификация и личный кабинет
 - [ ] **Stage 7:** Продвинутые функции (кастомные alias, аналитика, TTL)
 
 ---

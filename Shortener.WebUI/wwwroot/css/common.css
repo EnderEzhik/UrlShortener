@@ -154,11 +154,11 @@ body {
 }
 
 /* Таблица истории ссылок */
-.links-table {
+.urls-table {
     font-size: 14px;
 }
 
-.links-table th {
+.urls-table th {
     color: var(--muted);
     font-weight: 600;
     font-size: 12px;
@@ -168,34 +168,34 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-.links-table td {
+.urls-table td {
     padding: 14px;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
 
-.links-table tbody tr:last-child td {
+.urls-table tbody tr:last-child td {
     border-bottom: 0;
 }
 
-.links-table .link-original {
+.urls-table .url-original {
     max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.links-table .link-short {
+.urls-table .url-short {
     font-weight: 500;
     color: var(--brand);
 }
 
-.links-table .link-date {
+.urls-table .url-date {
     color: var(--muted);
     font-size: 13px;
 }
 
-.links-table .btn-delete {
+.urls-table .btn-delete {
     border-radius: 10px;
 }
 
@@ -212,7 +212,7 @@ body {
 }
 
 /* Список ссылок: прокрутка при переполнении */
-.links-list-overflow {
+.urls-list-overflow {
     overflow: auto;
     max-height: min(70vh, 520px);
 }

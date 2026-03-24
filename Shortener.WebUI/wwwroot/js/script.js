@@ -1,5 +1,5 @@
 import {apiServerAddress} from "./config.js";
-import {formatDate, buildShortUrl} from "./common.js";
+import {formatDate, buildShortUrl, getAuthToken, hasAuthToken} from "./common.js";
 
 const form = document.getElementById("shortener-form");
 const originalUrlInput = document.getElementById("original-url");
@@ -21,7 +21,7 @@ function showToast(message) {
 function setResult(shortUrl, expiryValue) {
     shortUrlInput.value = shortUrl;
     copyBtn.disabled = !shortUrl;
-    meta.textContent = expiryValue ? "Истекает: " + formatDate(expiryValue) : "Без даты истечения";
+    meta.textContent = expiryValue ? "Истекает: " + formatDate(expiryValue) : "Без срока жизни";
 }
 
 function reset() {
@@ -34,11 +34,17 @@ function reset() {
 }
 
 async function createShortUrl(originalUrl, expiresDatetime) {
+    const headers = {
+        "Content-Type": "application/json"
+    };
+    if (hasAuthToken()) {
+
+        headers["Authorization"] = `Bearer ${getAuthToken()}`;
+    }
+    
     const response = await fetch(`${apiServerAddress}/links`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
+        headers: headers,
         body: JSON.stringify({
             url: originalUrl,
             expiresAt: expiresDatetime

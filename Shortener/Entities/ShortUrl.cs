@@ -9,4 +9,7 @@ public class ShortUrl
     
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ExpiresAt { get; set; }
+    
+    public int? UserId { get; set; }
+    public User? User { get; set; }
 }

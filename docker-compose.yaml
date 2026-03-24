@@ -41,9 +41,7 @@ services:
             dockerfile: ./Dockerfile
         container_name: shortener
         environment:
-            - ASPNETCORE_URLS=https://*:7000;http://*:5000
-            - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
-            - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+            - ASPNETCORE_URLS=http://*:5000
             - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Port=5432;Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
             - ConnectionStrings__Redis=redis:6379
         depends_on:
@@ -54,9 +52,6 @@ services:
             - external
         ports:
             - "5000:5000"
-            - "7000:7000"
-        volumes:
-            - ./certificates:/https:ro
     
     shortener.web.ui:
         build:
@@ -64,9 +59,7 @@ services:
             dockerfile: ./Dockerfile
         container_name: shortener.web.ui
         environment:
-            - ASPNETCORE_URLS=https://*:7001;http://*:5001
-            - ASPNETCORE_Kestrel__Certificates__Default__Path=${CERT_PATH}
-            - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+            - ASPNETCORE_URLS=http://*:5001
             - API_SERVER_ADDRESS=http://shortener:5000/api
         depends_on:
             database:
@@ -76,9 +69,6 @@ services:
             - external
         ports:
             - "5001:5001"
-            - "7001:7001"
-        volumes:
-            -   ./certificates:/https:ro
 
 networks:
     internal:
