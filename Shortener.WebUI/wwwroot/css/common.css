@@ -91,7 +91,7 @@ body {
     color: var(--muted);
 }
 
-/* Поле даты (как в примере) */
+/* Поле даты */
 .expiry-field-wrapper {
     display: flex;
     flex-direction: column;
