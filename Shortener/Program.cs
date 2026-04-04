@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Filters;
 using Shortener.Data;
@@ -32,6 +33,12 @@ public class Program
             app.UseAuthorization();
 
             app.MapControllers();
+
+            if (app.Environment.IsDevelopment())
+            {
+                app.MapOpenApi();
+                app.MapScalarApiReference();
+            }
             
             Log.Information("Application started");
             app.Run();
@@ -72,6 +79,7 @@ public class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
+        builder.Services.AddOpenApi();
         builder.Services.AddSerilog();
         
         builder.Services.AddDbContext<ApplicationDbContext>(options =>

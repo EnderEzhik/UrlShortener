@@ -17,6 +17,7 @@
 - **Логирование:** Serilog
 - **Архитектура:** Clean Architecture с разделением на слои, отдельное frontend приложение
 - **Контейнеризация:** Docker + Docker Compose
+- **Документация API:** OpenApi + Scalar UI
 
 ## 📁 Структура проекта
 
