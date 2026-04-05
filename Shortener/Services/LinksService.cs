@@ -14,12 +14,13 @@ public class LinksService
     private readonly Serilog.ILogger logger = Log.ForContext<LinksService>();
     private readonly ApplicationDbContext _db;
     private readonly IDistributedCache _cache;
-    private const int SHORT_CODE_LENGTH = 8;
+    private readonly int SHORT_CODE_LENGTH;
 
-    public LinksService(ApplicationDbContext db, IDistributedCache cache)
+    public LinksService(ApplicationDbContext db, IDistributedCache cache, IConfiguration config)
     {
         _db = db;
         _cache = cache;
+        SHORT_CODE_LENGTH = config.GetValue<int>("SHORT_CODE_LENGTH");
     }
 
     public async Task<ShortUrl> CreateShortUrlAsync(int? userId, string url, DateTimeOffset? expiresAt)
