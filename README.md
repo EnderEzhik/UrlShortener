@@ -64,6 +64,7 @@ UrlShortener/                 # Solution
    ```bash
    cd ./Shortener
    dotnet ef database update  --connection Host=localhost;Port=6666;Database=url_shortener;Username=postgres;Password=postgres
+   # если база данных находится локально в docker контейнере - в качестве Host используйте localhost, а в качестве Port DB_EXTERNAL_PORT из .env
    ```
 
 4. **Запустите приложение с PostgreSQL и Redis:**

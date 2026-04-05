@@ -32,7 +32,7 @@ public class JwtService
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(int.Parse(_jwtOptions.ExpirationInHours)),
+            expires: DateTime.UtcNow.AddMinutes(int.Parse(_jwtOptions.ExpirationInMinutes)),
             signingCredentials: signingCredentials
         );
         return new JwtSecurityTokenHandler().WriteToken(jwt);

@@ -15,35 +15,38 @@ services:
             - internal
             - external
         ports:
-            - "6666:5432"
+            - "${DB_EXTERNAL_PORT}:5432"
         volumes:
             - db-data:/var/lib/postgresql/data
     
     redis:
         image: redis:8.4-alpine
         container_name: redis
-        networks:
-            - internal
-            - external
-        ports:
-            -   "6379:6379"
-        volumes:
-            -   redis-data:/data
         healthcheck:
             test: ["CMD-SHELL", "redis-cli", "-a", "ping"]
             interval: 5s
             timeout: 3s
             retries: 5
+        networks:
+            - internal
+            - external
+        ports:
+            - "${REDIS_EXTERNAL_PORT}:6379"
+        volumes:
+            - redis-data:/data
     
     shortener:
         build:
             context: ./Shortener/
             dockerfile: ./Dockerfile
         container_name: shortener
+        env_file:
+            - .env
         environment:
-            - ASPNETCORE_URLS=http://*:5000
-            - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Port=5432;Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
-            - ConnectionStrings__Redis=redis:6379
+            - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT}
+            - ASPNETCORE_URLS=http://*:${BACKEND_PORT}
+            - ConnectionStrings__DATABASE=Host=${DB_HOST};Port=${DB_PORT};Database=${DB_NAME};Username=${DB_USER};Password=${DB_PASSWORD}
+            - ConnectionStrings__REDIS=${REDIS_HOST}:${REDIS_PORT}
         depends_on:
             database:
                 condition: service_healthy
@@ -51,7 +54,7 @@ services:
             - internal
             - external
         ports:
-            - "5000:5000"
+            - "${BACKEND_PORT}:${BACKEND_PORT}"
     
     shortener.web.ui:
         build:
@@ -59,8 +62,9 @@ services:
             dockerfile: ./Dockerfile
         container_name: shortener.web.ui
         environment:
-            - ASPNETCORE_URLS=http://*:5001
-            - API_SERVER_ADDRESS=http://shortener:5000/api
+            - ASPNETCORE_ENVIRONMENT=${ENVIRONMENT}
+            - ASPNETCORE_URLS=http://*:${FRONTEND_PORT}
+            - API_SERVER_ADDRESS=http://shortener:${BACKEND_PORT}/api
         depends_on:
             database:
                 condition: service_healthy
@@ -68,7 +72,7 @@ services:
             - internal
             - external
         ports:
-            - "5001:5001"
+            - "${FRONTEND_PORT}:${FRONTEND_PORT}"
 
 networks:
     internal:

@@ -84,12 +84,12 @@ public class Program
         
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+            options.UseNpgsql(builder.Configuration.GetConnectionString("DATABASE"));
         });
 
         builder.Services.AddStackExchangeRedisCache(options =>
         {
-            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            var redisConnectionString = builder.Configuration.GetConnectionString("REDIS");
             options.Configuration = redisConnectionString;
             options.InstanceName = "UrlShortener_";
         });
@@ -99,7 +99,7 @@ public class Program
         builder.Services.AddScoped<LinksService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<JwtService>();
-
+        
         var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
                          ?? throw new InvalidOperationException("Jwt options are not configured. Missing 'Jwt' section in configuration.");
 
