@@ -40,17 +40,21 @@ public class AuthController : ControllerBase
                 message = "Password must contain at least 8 characters"
             });
         }
-        
+
         try
         {
             var newUser = await _userService.CreateUser(requestData.Login, requestData.Password);
             logger.Information("New user created");
 
             logger.Information("Generating jwt token");
-            var token = _jwtService.GenerateJwtToken(newUser);
+            var (token, expires) = _jwtService.GenerateJwtToken(newUser);
             logger.Information("Successfully generated jwt token");
 
-            return new JWTTokenResponse { Token = token };
+            return new JWTTokenResponse { Token = token, Expires = expires };
+        }
+        catch (ArgumentException)
+        {
+            return Conflict();
         }
         catch (Exception)
         {
@@ -71,9 +75,9 @@ public class AuthController : ControllerBase
             }
 
             logger.Information("Generating jwt token");
-            var token = _jwtService.GenerateJwtToken(user);
+            var (token, expires) = _jwtService.GenerateJwtToken(user);
             logger.Information("Successfully generated jwt token");
-            return new JWTTokenResponse { Token = token };
+            return new JWTTokenResponse { Token = token, Expires = expires };
         }
         catch (Exception)
         {

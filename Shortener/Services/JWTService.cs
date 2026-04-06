@@ -17,7 +17,7 @@ public class JwtService
         _jwtOptions = options.Value;
     }
     
-    public string GenerateJwtToken(User user)
+    public (string, DateTimeOffset) GenerateJwtToken(User user)
     {
         var claims = new Claim[]
         {
@@ -27,14 +27,16 @@ public class JwtService
         var signingCredentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey)), 
         SecurityAlgorithms.HmacSha256);
+
+        var expires = DateTime.UtcNow.AddMinutes(int.Parse(_jwtOptions.ExpirationInMinutes));
         
         var jwt = new JwtSecurityToken(
             issuer: _jwtOptions.Issuer,
             audience: _jwtOptions.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(int.Parse(_jwtOptions.ExpirationInMinutes)),
+            expires: expires,
             signingCredentials: signingCredentials
         );
-        return new JwtSecurityTokenHandler().WriteToken(jwt);
+        return (new JwtSecurityTokenHandler().WriteToken(jwt), expires);
     }
 }
