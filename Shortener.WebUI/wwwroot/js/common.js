@@ -9,23 +9,11 @@ function buildShortUrl(shortCode) {
     return window.location.origin + "/" + shortCode;
 }
 
-function checkTokenExpiration(jwtToken) {
-    const tokenParts = jwtToken.split(".");
-
-    if (tokenParts.length !== 3) {
-        console.warn("Неверный формат JWT токена");
-        return false;
-    }
-
-    const payload = JSON.parse(atob(tokenParts[1]));
-
-    const currentTime = Math.floor(Date.now() / 1000);
-
-    if (payload.exp < currentTime) {
+function checkTokenExpires(tokenExpires) {
+    if (tokenExpires < new Date()) {
         console.log("Срок действия токена истек");
         return false;
     }
-
     console.log("Токен действителен");
     return true;
 }
@@ -33,8 +21,9 @@ function checkTokenExpiration(jwtToken) {
 function hasAuthToken() {
     let tokenData = localStorage.getItem("token");
     if (tokenData) {
-        const token = JSON.parse(tokenData).token;
-        if (!checkTokenExpiration(token)) {
+        const decodedTokenData = JSON.parse(tokenData);
+        const tokenExpires = new Date(decodedTokenData.expires);
+        if (!checkTokenExpires(tokenExpires)) {
             localStorage.removeItem("token");
             return false;
         }
@@ -42,8 +31,9 @@ function hasAuthToken() {
     }
     tokenData = sessionStorage.getItem("token");
     if (tokenData) {
-        const token = JSON.parse(tokenData).token;
-        if (!checkTokenExpiration(token)) {
+        const decodedTokenData = JSON.parse(tokenData);
+        const tokenExpires = new Date(decodedTokenData.expires);
+        if (!checkTokenExpires(tokenExpires)) {
             sessionStorage.removeItem("token");
             return false;
         }
@@ -53,13 +43,13 @@ function hasAuthToken() {
 }
 
 function getAuthToken() {
-    let token = localStorage.getItem("token");
-    if (token) {
-        return JSON.parse(token).token;
+    let tokenData = localStorage.getItem("token");
+    if (tokenData) {
+        return JSON.parse(tokenData).token;
     }
-    token = sessionStorage.getItem("token");
-    if (token) {
-        return JSON.parse(token).token;
+    tokenData = sessionStorage.getItem("token");
+    if (tokenData) {
+        return JSON.parse(tokenData).token;
     }
     return null;
 }

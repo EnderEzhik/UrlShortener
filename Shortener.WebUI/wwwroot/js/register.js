@@ -1,4 +1,8 @@
 import { hasAuthToken } from "./common.js";
+if (hasAuthToken()) {
+    window.location.pathname = "";
+}
+
 import {apiServerAddress} from "./config.js";
 
 const form = document.getElementById("registration-form");
@@ -78,11 +82,5 @@ form.addEventListener("submit", async (event) => {
     catch (error) {
         console.error(error);
         showError("Не удалось отправить запрос. Проверьте соединение и попробуйте снова.");
-    }
-})
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (hasAuthToken()) {
-        window.location.pathname = "";
     }
 });
