@@ -30,7 +30,7 @@ public class RedirectorController : ControllerBase
                 });
             }
 
-            return Redirect(url.OriginalUrl);
+            return RedirectPermanent(url.OriginalUrl);
         }
         catch (Exception)
         {
