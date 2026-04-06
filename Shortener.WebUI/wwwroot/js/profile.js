@@ -1,6 +1,10 @@
 import {apiServerAddress} from "./config.js";
 import {getAuthToken, buildShortUrl} from "./common.js";
 
+const toastEl = document.getElementById("app-toast");
+const toastBody = document.getElementById("toast-body");
+const toast = new bootstrap.Toast(toastEl, { delay: 2200 });
+
 const urlsContainer = {
     self: document.getElementById("urls-container"),
     loadingIndicator: document.getElementById("urls-loading"),
@@ -17,10 +21,16 @@ const profileContainer = {
     errorIndicator: document.getElementById("profile-error"),
     content: document.getElementById("profile-content"),
     username: document.getElementById("profile-username"),
-    registrationDate: document.getElementById("profile-registration-date")
+    registrationDate: document.getElementById("profile-registration-date"),
+    urlCounter: document.getElementById("profile-url-counter")
 };
 
 const urlsShowExpiredCheckbox = document.getElementById("urls-show-expired");
+
+function showToast(message) {
+    toastBody.textContent = message;
+    toast.show();
+}
 
 let urlsCacheActive = null;
 let urlsCacheAll = null;
@@ -53,16 +63,21 @@ async function deleteUrl(shortCode) {
             }
         });
         if (!response.ok) {
-            console.warn(response);
-            alert("При удалении ссылки сервер вернул не 2** статус код");
+            console.error(response);
+            showToast("Ошибка при удалении ссылки");
             return;
         }
         deleteUrlFromUI(shortCode);
-        if (urlsCacheActive) urlsCacheActive = urlsCacheActive.filter(u => u.shortCode !== shortCode);
+        if (urlsCacheActive) {
+            urlsCacheActive = urlsCacheActive.filter(u => u.shortCode !== shortCode);
+            profileContainer.urlCounter.textContent = urlsCacheActive?.length ?? 0;
+        }
         if (urlsCacheAll) urlsCacheAll = urlsCacheAll.filter(u => u.shortCode !== shortCode);
         if (urlsContainer.urlsTableBody.rows.length === 0) {
             showUrlsContainerElement(urlsContainer.emptyIndicator);
         }
+
+        showToast("Ссылка успешно удалена");
     }
     catch (error) {
         console.error(error);
@@ -109,10 +124,10 @@ function createTableRow(originalUrl, shortCode, createdAt, expiresAt) {
                 <button type="button" id="deleteBtn" class="btn btn-sm btn-outline-danger">Удалить</button>
             </div>
         </td>`;
-    
+
     tr.querySelector("[id=copyBtn]").addEventListener("click", () => copyUrl(buildShortUrl(shortCode)));
     tr.querySelector("[id=deleteBtn]").addEventListener("click", () => deleteUrl(shortCode));
-    
+
     return tr;
 }
 
@@ -206,33 +221,35 @@ async function loadUserProfile() {
             profileContainer.errorIndicator.classList.remove("d-none");
             return;
         }
-        
+
         const userData = await response.json();
         const username = userData.username;
         const registrationDate = userData.registrationDate;
-        
+
         profileContainer.username.textContent = username;
         profileContainer.registrationDate.textContent = new Date(registrationDate).toLocaleString("ru-RU", {dateStyle: "short"});
+        profileContainer.urlCounter.textContent = urlsCacheActive?.length ?? 0;
         profileContainer.loadingIndicator.classList.add("d-none");
         profileContainer.content.classList.remove("d-none");
     }
     catch (error) {
+        console.error(error);
         profileContainer.loadingIndicator.classList.add("d-none");
         profileContainer.errorIndicator.classList.remove("d-none");
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadUserUrls();
-    loadUserProfile();
+document.addEventListener("DOMContentLoaded", async () => {
+    await loadUserUrls();
+    await loadUserProfile();
 
-    urlsShowExpiredCheckbox.addEventListener("change", () => {
+    urlsShowExpiredCheckbox.addEventListener("change", async () => {
         if (urlsShowExpiredCheckbox.checked) {
-            ensureUrlsAllLoaded();
+            await ensureUrlsAllLoaded();
         } else if (urlsCacheActive) {
             showUrls(urlsCacheActive);
         } else {
-            loadUserUrls();
+            await loadUserUrls();
         }
     });
 });

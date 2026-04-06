@@ -41,7 +41,7 @@ async function createShortUrl(originalUrl, expiresDatetime) {
 
         headers["Authorization"] = `Bearer ${getAuthToken()}`;
     }
-    
+
     const response = await fetch(`${apiServerAddress}/links`, {
         method: "POST",
         headers: headers,
@@ -89,18 +89,22 @@ form.addEventListener("submit", async (e) => {
 
     form.classList.add("was-validated");
     if (!form.checkValidity()) return;
-    
+
     const originalUrl = originalUrlInput.value;
-    
+
     let expiresDatetime = null;
-    if (expiryInput.value) {
+    if (expiryInput.value && expiryInput.value.trim() !== "") {
         const expiryDate = new Date(expiryInput.value);
+        if (expiryDate <= Date.now()) {
+            showToast("Дата истечения должна быть в будущем");
+            return;
+        }
         expiresDatetime = removeMilliseconds(expiryDate);
     }
 
     try {
         const data = await createShortUrl(originalUrl, expiresDatetime);
-        
+
         const shortUrl = buildShortUrl(data["shortCode"]);
 
         setResult(shortUrl, data["expiresAt"]);
