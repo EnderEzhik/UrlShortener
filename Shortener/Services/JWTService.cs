@@ -26,7 +26,8 @@ public class JwtService
 
         var signingCredentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey)), 
-        SecurityAlgorithms.HmacSha256);
+        SecurityAlgorithms.HmacSha256
+        );
 
         var expires = DateTime.UtcNow.AddMinutes(int.Parse(_jwtOptions.ExpirationInMinutes));
         

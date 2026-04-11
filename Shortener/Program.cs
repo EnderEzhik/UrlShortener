@@ -19,7 +19,7 @@ public class Program
 
         try
         {
-            Log.Information("Application starting");
+            Log.Information("Application starting...");
             
             var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +79,7 @@ public class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
+        Log.Information("Configuring services...");
         builder.Services.AddOpenApi();
         builder.Services.AddSerilog();
         

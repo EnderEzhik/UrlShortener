@@ -66,13 +66,14 @@ services:
             - ASPNETCORE_URLS=http://*:${FRONTEND_PORT}
             - API_SERVER_ADDRESS=http://shortener:${BACKEND_PORT}/api
         depends_on:
-            database:
-                condition: service_healthy
+            - shortener
         networks:
             - internal
             - external
         ports:
             - "${FRONTEND_PORT}:${FRONTEND_PORT}"
+        volumes:
+            - ./Shortener.WebUI/wwwroot:/app/wwwroot:ro
 
 networks:
     internal:

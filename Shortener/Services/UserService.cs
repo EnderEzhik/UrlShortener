@@ -32,9 +32,8 @@ public class UserService
             Password = password
         };
         
-        _db.Add(newUser);
-        
         logger.Information("Saving new user to database");
+        _db.Add(newUser);
         
         try
         {
@@ -54,7 +53,7 @@ public class UserService
         logger.Information("Searching user by id");
         try
         {
-            User? user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            User? user = await _db.Users.SingleOrDefaultAsync(u => u.Id == userId);
             logger.Information("User found in database: {userFound}", user is not null);
             return user;
         }
@@ -70,7 +69,7 @@ public class UserService
         logger.Information("Searching user by login");
         try
         {
-            User? user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login);
+            User? user = await _db.Users.SingleOrDefaultAsync(u => u.Login == login);
             logger.Information("User found in database: {userFound}", user is not null);
             return user;
         }

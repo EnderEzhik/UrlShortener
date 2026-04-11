@@ -39,9 +39,8 @@ public class LinksService
             UserId = userId
         };
         
-        _db.Urls.Add(shortUrl);
-        
         logger.Information("Saving ShortUrl to database");
+        _db.Urls.Add(shortUrl);
         
         try
         {
@@ -61,7 +60,7 @@ public class LinksService
         logger.Information("Searching ShortUrl in database");
         try
         {
-            ShortUrl? shortUrl = await _db.Urls.FirstOrDefaultAsync(url => url.ShortCode == shortCode);
+            ShortUrl? shortUrl = await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
             logger.Information("ShortUrl found in database: {shortUrlFound}", shortUrl is not null);
             return shortUrl;
         }

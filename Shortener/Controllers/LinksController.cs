@@ -25,7 +25,7 @@ public class LinksController : ControllerBase
     {
         logger.Information("Post request for create new ShortUrl");
         
-        if (requestData.ExpiresAt <= DateTime.UtcNow)
+        if (requestData.ExpiresAt <= DateTimeOffset.UtcNow)
         {
             logger.Information("Expires must be in the future");
             return BadRequest(new

@@ -6,7 +6,7 @@ using Shortener.Services;
 namespace Shortener.Controllers;
 
 [ApiController]
-[Route("api")]
+[Route("api/auth")]
 public class AuthController : ControllerBase
 {
     private readonly Serilog.ILogger logger = Log.ForContext<AuthController>();
@@ -26,7 +26,7 @@ public class AuthController : ControllerBase
 
         if (requestData.Login.Length < 4)
         {
-            logger.Warning("Password length is less than 4");
+            logger.Warning("Login length is less than 4");
             return BadRequest(new
             {
                 message = "Login must contain at least 4 characters"

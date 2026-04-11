@@ -18,7 +18,6 @@ RUN dotnet publish "./Shortener.csproj" -c $BUILD_CONFIGURATION -o /app/publish 
 
 FROM base AS final
 WORKDIR /app
-EXPOSE 5000
 
 COPY --from=publish /app/publish .
 

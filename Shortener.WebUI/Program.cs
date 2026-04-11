@@ -45,11 +45,11 @@ public class Program
                     return Results.Redirect("/error");
                 }
                 ShortUrlResponseDTO data = (await response.Content.ReadFromJsonAsync<ShortUrlResponseDTO>())!;
-                if (data.ExpiresAt.HasValue && data.ExpiresAt.Value < DateTime.Now)
+                if (data.ExpiresAt.HasValue && data.ExpiresAt.Value < DateTimeOffset.UtcNow)
                 {
                     return Results.Redirect("/error");
                 }
-                return Results.Redirect(data.OriginalUrl);
+                return Results.Redirect(data.OriginalUrl, permanent: true);
             }
             catch (Exception e)
             {
