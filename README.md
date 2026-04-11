@@ -9,7 +9,7 @@
 
 ### Технологический стек:
 - **Backend:** ASP.NET Core Web API
-- **Frontend:** ASP.NET Core (статичные файлы), HTML5, CSS3, JavaScript (ES6+)
+- **Frontend:** HTML5, CSS3, JavaScript (ES6+)
 - **Язык:** C# (.NET 9.0)
 - **База данных:** PostgreSQL
 - **Кэширование:** Redis
@@ -18,6 +18,7 @@
 - **Архитектура:** Clean Architecture с разделением на слои, отдельное frontend приложение
 - **Контейнеризация:** Docker + Docker Compose
 - **Документация API:** OpenApi + Scalar UI
+- **Обратный прокси:** Nginx
 
 ## 📁 Структура проекта
 
@@ -36,13 +37,12 @@ UrlShortener/                 # Solution
 │   ├── Options/              # Bind-классы для конфигураций
 │   ├── Services/             # Сервисы (бизнес-логика)
 │   └── Dockerfile            # Docker файл API приложения
-├── Shortener.WebUI/          # Frontend приложение
-│   ├── wwwroot/              # Статичные файлы (HTML, CSS, JS)
-│   │   ├── css               # Css стили
-│   │   └── js                # Javascript
-│   └── Dockerfile            # Docker файл frontend приложения
+├── Frontend/                 # Статичные файлы (HTML, CSS, JS)
+│   ├── css                   # CSS стили
+│   └── js                    # Javascript
 ├── docker-compose.yaml       # Docker Compose конфигурация
-└── .env                      # Переменные окружения для Docker Compose
+├── .env                      # Переменные окружения для Docker Compose
+└── nginx.conf                # Конфигурация Nginx
 ```
 
 ## 🛠 Установка и запуск
@@ -73,8 +73,8 @@ UrlShortener/                 # Solution
    ```
 
 5. **Приложения будут доступны по адресам:**
-    - **API:** http://localhost:5001
-    - **Frontend (Web UI):** http://localhost:5000
+    - **Сайт:** http://localhost
+    - **API:** http://localhost:5000
 
 ## 🗺 Дорожная карта (Roadmap)
 
