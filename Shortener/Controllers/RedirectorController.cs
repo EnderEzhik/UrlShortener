@@ -22,7 +22,7 @@ public class RedirectorController : ControllerBase
         try
         {
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
-            if (url is null)
+            if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
             {
                 return NotFound(new
                 {
