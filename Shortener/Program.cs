@@ -5,7 +5,9 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Filters;
+using Serilog.Formatting.Compact;
 using Shortener.Data;
+using Shortener.Middlewares;
 using Shortener.Options;
 using Shortener.Services;
 
@@ -26,6 +28,9 @@ public class Program
             ConfigureServices(builder);
 
             var app = builder.Build();
+
+            app.UseSerilogRequestLogging();
+            app.UseMiddleware<RequestLoggingMiddleware>();
             
             app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
             
@@ -60,6 +65,7 @@ public class Program
             .MinimumLevel.Debug()
             .Enrich.FromLogContext()
             .WriteTo.File(
+                formatter: new CompactJsonFormatter(),
                 path: "logs/all/shortener-all.log",
                 rollingInterval: RollingInterval.Day,
                 shared: true)
@@ -69,10 +75,10 @@ public class Program
                 .Filter.ByExcluding(Matching.FromSource("Microsoft"))
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File(
+                    formatter: new CompactJsonFormatter(),
                     path: "logs/shortener.log",
                     rollingInterval: RollingInterval.Day,
-                    shared: true,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+                    shared: true)
             )
             .CreateLogger();
     }
