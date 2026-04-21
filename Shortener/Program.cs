@@ -85,7 +85,7 @@ public class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
-        Log.Information("Configuring services...");
+        Log.Debug("Configuring services...");
         builder.Services.AddOpenApi();
         builder.Services.AddSerilog();
         
@@ -133,6 +133,6 @@ public class Program
         
         builder.Services.AddControllers();
         
-        Log.Information("Services configured");
+        Log.Debug("Services configured");
     }
 }

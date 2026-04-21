@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Serilog.Context;
 using Shortener.Entities;
 using Shortener.Models;
 using Shortener.Models.DTOs;
@@ -12,77 +13,94 @@ namespace Shortener.Controllers;
 [Route("api/links")]
 public class LinksController : ControllerBase
 {
-    private readonly Serilog.ILogger logger = Serilog.Log.ForContext<LinksController>();
+    private readonly Serilog.ILogger _logger;
     private readonly LinksService _linksService;
     
     public LinksController(LinksService linksService)
     {
         _linksService = linksService;
+        _logger = Serilog.Log.ForContext<LinksController>();
     }
 
     [HttpPost]
     public async Task<ActionResult<ShortUrlResponse>> CreateShortUrl(CreateShortUrlRequest requestData)
     {
-        logger.Information("Post request for create new ShortUrl");
-        
-        if (requestData.ExpiresAt <= DateTimeOffset.UtcNow)
-        {
-            logger.Information("Expires must be in the future");
-            return BadRequest(new
-            {
-                message = "Expires must be in the future"
-            });
-        }
-        
-        logger.Information("Checking whether the user is authorized");
         int? parsedUserId = null;
-        if (HttpContext.User.Identity?.IsAuthenticated == true)
+        
+        if (HttpContext.User.Identity?.IsAuthenticated is true)
         {
             var userId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
             parsedUserId = userId is not null ? int.Parse(userId) : null;
         }
-        logger.Information("User is authorized: {isAuthorized}", parsedUserId is not null);
         
-        try
+        using(LogContext.PushProperty("UserId", parsedUserId))
+        using (LogContext.PushProperty("Url", requestData.Url))
         {
-            var shortUrl = await _linksService.CreateShortUrlAsync(parsedUserId, requestData.Url, requestData.ExpiresAt);
-            return new ShortUrlResponse()
+            _logger.Information("Creating short url");
+            
+            if (requestData.ExpiresAt <= DateTimeOffset.UtcNow)
             {
-                OriginalUrl = shortUrl.OriginalUrl,
-                ShortCode = shortUrl.ShortCode,
-                ExpiresAt = shortUrl.ExpiresAt,
-                CreatedAt = shortUrl.CreatedAt
-            };
-        }
-        catch (Exception)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+                _logger.Warning("Invalid expiration date");
+                
+                return BadRequest(new
+                {
+                    message = "Expires must be in the future"
+                });
+            }
+        
+            try
+            {
+                var shortUrl = await _linksService.CreateShortUrlAsync(parsedUserId, requestData.Url, requestData.ExpiresAt);
+                
+                _logger.Information("Short url successfully created");
+                
+                return new ShortUrlResponse()
+                {
+                    OriginalUrl = shortUrl.OriginalUrl,
+                    ShortCode = shortUrl.ShortCode,
+                    ExpiresAt = shortUrl.ExpiresAt,
+                    CreatedAt = shortUrl.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error while creating short url");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 
     [HttpGet("{shortCode}")]
     public async Task<ActionResult<ShortUrlResponse>> GetShortUrlByShortCode(string shortCode)
     {
-        logger.Information("Get request for get ShortUrl");
-        try
+        using (LogContext.PushProperty("ShortCode", shortCode))
         {
-            ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
-            if (shortUrl is null)
+            _logger.Information("Getting short url");
+            
+            try
             {
-                return NotFound();
-            }
+                ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
+                if (shortUrl is null)
+                {
+                    _logger.Warning("Short url not found");
+                    
+                    return NotFound();
+                }
+                
+                _logger.Information("Short url successfully got");
 
-            return new ShortUrlResponse()
+                return new ShortUrlResponse()
+                {
+                    OriginalUrl = shortUrl.OriginalUrl,
+                    ShortCode = shortUrl.ShortCode,
+                    ExpiresAt = shortUrl.ExpiresAt,
+                    CreatedAt = shortUrl.CreatedAt
+                };
+            }
+            catch (Exception)
             {
-                OriginalUrl = shortUrl.OriginalUrl,
-                ShortCode = shortUrl.ShortCode,
-                ExpiresAt = shortUrl.ExpiresAt,
-                CreatedAt = shortUrl.CreatedAt
-            };
-        }
-        catch (Exception)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 
@@ -90,26 +108,32 @@ public class LinksController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ShortUrlResponse>>> GetShortUrlsWithFilters([FromQuery] UrlsFiltersRequest filters)
     {
-        logger.Information("Get request for get ShortUrl list with filters");
-        
         var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         var parsedUserId = int.Parse(currentUserId);
-        
-        try
+
+        using (LogContext.PushProperty("UserId", parsedUserId))
         {
-            var shortUrlList =
-                await _linksService.GetShortUrlsWithFiltersAsync(parsedUserId, filters.ExcludeExpiredUrls);
-            return shortUrlList.Select(u => new ShortUrlResponse()
+            _logger.Information("Getting short urls list with filters {@Filters}", filters);
+            
+            try
             {
-                OriginalUrl = u.OriginalUrl,
-                ShortCode = u.ShortCode,
-                CreatedAt = u.CreatedAt,
-                ExpiresAt = u.ExpiresAt
-            }).ToList();
-        }
-        catch (Exception)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+                var shortUrlsList = await _linksService.GetShortUrlsWithFiltersAsync(parsedUserId, filters.ExcludeExpiredUrls);
+                
+                _logger.Information("Found {ShortUrlsCount} short urls", shortUrlsList.Count);
+                
+                return shortUrlsList.Select(u => new ShortUrlResponse()
+                {
+                    OriginalUrl = u.OriginalUrl,
+                    ShortCode = u.ShortCode,
+                    CreatedAt = u.CreatedAt,
+                    ExpiresAt = u.ExpiresAt
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error while getting short urls list");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 
@@ -117,19 +141,30 @@ public class LinksController : ControllerBase
     [HttpDelete("{shortCode}")]
     public async Task<ActionResult> DeleteShortUrlByShortCode(string shortCode)
     {
-        logger.Information("Delete request for delete ShortUrl");
-        
         var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         var parsedUserId = int.Parse(currentUserId);
-        
-        try
+
+        using (LogContext.PushProperty("UserId", parsedUserId))
+        using (LogContext.PushProperty("ShortCode", shortCode))
         {
-            bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, parsedUserId);
-            return result ? NoContent() : NotFound();
-        }
-        catch (Exception)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+            _logger.Information("Deleting short url");
+            
+            try
+            {
+                bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, parsedUserId);
+                if (!result)
+                {
+                    return NotFound();
+                }
+                
+                _logger.Information("Short url successfully deleted");
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error while deleting short url");
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }
