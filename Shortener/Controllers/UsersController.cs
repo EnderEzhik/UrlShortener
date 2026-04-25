@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Serilog;
+using Serilog.Context;
 using Shortener.Models.DTOs;
 using Shortener.Services;
 
@@ -11,36 +11,43 @@ namespace Shortener.Controllers;
 [Route("api/users")]
 public class UsersController : ControllerBase
 {
-    private readonly Serilog.ILogger logger = Log.ForContext<UsersController>();
+    private readonly Serilog.ILogger _logger;
     private readonly UserService _userService;
     
     public UsersController(UserService userService)
     {
         _userService = userService;
+        _logger = Serilog.Log.ForContext<UsersController>();
     }
 
     [Authorize]
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
-        logger.Information("Get request for get user me");
-        
         var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         var parsedUserId = int.Parse(currentUserId);
         
-        try
+        using(LogContext.PushProperty("UserId", parsedUserId))
         {
-            var currentUser = await _userService.GetUserById(parsedUserId);
-            var userResponse = new UserResponse()
+            _logger.Information("Getting user");
+            
+            try
             {
-                Username = currentUser.Login,
-                RegistrationDate = currentUser.RegistrationAt
-            };
-            return userResponse;
-        }
-        catch (Exception)
-        {
-            return StatusCode(StatusCodes.Status500InternalServerError);
+                var currentUser = await _userService.GetUserById(parsedUserId);
+                
+                _logger.Information("Got user");
+                
+                var userResponse = new UserResponse()
+                {
+                    Username = currentUser.Login,
+                    RegistrationDate = currentUser.RegistrationAt
+                };
+                return userResponse;
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
 }
