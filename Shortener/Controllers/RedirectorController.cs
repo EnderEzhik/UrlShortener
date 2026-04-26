@@ -29,10 +29,12 @@ public class RedirectorController : ControllerBase
                 {
                     _logger.Warning("Short url not found or expired");
 
-                    return NotFound(new
-                    {
-                        message = "Short code not found or expired"
-                    });
+                    return Problem(
+                        title: "Invalid short code",
+                        detail: $"Short url by short code \"{shortCode}\" not found or expired",
+                        statusCode: StatusCodes.Status404NotFound,
+                        type: "errors/invalid-short-code"
+                    );
                 }
 
                 _logger.Information("Short url found");

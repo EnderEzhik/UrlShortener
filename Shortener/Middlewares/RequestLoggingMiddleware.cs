@@ -17,17 +17,9 @@ public class RequestLoggingMiddleware
         {
             Log.Information("Incoming HTTP request");
 
-            try
-            {
-                await _next(context);
+            await _next(context);
 
-                Log.Information("Request finished with status {StatusCode}", context.Response.StatusCode);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Unhandled exception");
-                throw;
-            }
+            Log.Information("Request finished with status {StatusCode}", context.Response.StatusCode);
         }
     }
 }

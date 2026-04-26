@@ -31,20 +31,24 @@ public class AuthController : ControllerBase
             {
                 _logger.Warning("Login length is less than 4");
             
-                return BadRequest(new
-                {
-                    message = "Login must contain at least 4 characters"
-                });
+                return Problem(
+                    title: "Invalid login length",
+                    detail: "Login must contain at least 4 characters",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-login"
+                );
             }
         
             if (requestData.Password.Length < 8)
             {
                 _logger.Warning("Password length is less than 8");
             
-                return BadRequest(new
-                {
-                    message = "Password must contain at least 8 characters"
-                });
+                return Problem(
+                    title: "Invalid password length",
+                    detail: "Password must contain at least 8 characters",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-password"
+                );
             }
     
             try
@@ -54,19 +58,20 @@ public class AuthController : ControllerBase
                 _logger.Information("New user registered");
 
                 var (token, expires) = _jwtService.GenerateJwtToken(newUser);
-    
-                _logger.Debug("Token generated");
-                
-                return new JWTTokenResponse { Token = token, Expires = expires };
+                return new JWTTokenResponse()
+                {
+                    Token = token,
+                    Expires = expires
+                };
             }
             catch (ArgumentException)
             {
-                return Conflict();
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Error while registering user");
-                return StatusCode(StatusCodes.Status500InternalServerError);
+                return Problem(
+                    title: "Not unique login",
+                    detail: "Login is already in use",
+                    statusCode: StatusCodes.Status409Conflict,
+                    type: "errors/invalid-login"
+                );
             }
         }
     }
@@ -78,25 +83,27 @@ public class AuthController : ControllerBase
         {
             _logger.Information("Authorization");
             
-            try
+            var user = await _userService.GetUserByLogin(loginData.Login);
+            if (user is null || user.Password != loginData.Password)
             {
-                var user = await _userService.GetUserByLogin(loginData.Login);
-                if (user is null || user.Password != loginData.Password)
-                {
-                    _logger.Warning("User not found or password is incorrect");
-                    return Unauthorized();
-                }
-                var (token, expires) = _jwtService.GenerateJwtToken(user);
+                _logger.Warning("User not found or password is incorrect");
                 
-                _logger.Information("Successful authorization");
-                
-                return new JWTTokenResponse { Token = token, Expires = expires };
+                return Problem(
+                    title: "Could not log in",
+                    detail: "Login or password is incorrect",
+                    statusCode: StatusCodes.Status401Unauthorized,
+                    type: "errors/invalid-login-data"
+                );
             }
-            catch (Exception ex)
+            var (token, expires) = _jwtService.GenerateJwtToken(user);
+            
+            _logger.Information("Successful authorization");
+            
+            return new JWTTokenResponse()
             {
-                _logger.Error(ex, "Error while authorization");
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+                Token = token,
+                Expires = expires
+            };
         }
     }
 }

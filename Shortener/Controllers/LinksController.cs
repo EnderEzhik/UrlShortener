@@ -42,31 +42,25 @@ public class LinksController : ControllerBase
             {
                 _logger.Warning("Invalid expiration date");
                 
-                return BadRequest(new
-                {
-                    message = "Expires must be in the future"
-                });
+                return Problem(
+                    title: "Invalid expiration date",
+                    detail: "Expires must be in the future",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-expiration"
+                );
             }
         
-            try
+            var shortUrl = await _linksService.CreateShortUrlAsync(parsedUserId, requestData.Url, requestData.ExpiresAt);
+            
+            _logger.Information("Short url successfully created");
+            
+            return new ShortUrlResponse()
             {
-                var shortUrl = await _linksService.CreateShortUrlAsync(parsedUserId, requestData.Url, requestData.ExpiresAt);
-                
-                _logger.Information("Short url successfully created");
-                
-                return new ShortUrlResponse()
-                {
-                    OriginalUrl = shortUrl.OriginalUrl,
-                    ShortCode = shortUrl.ShortCode,
-                    ExpiresAt = shortUrl.ExpiresAt,
-                    CreatedAt = shortUrl.CreatedAt
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Error while creating short url");
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+                OriginalUrl = shortUrl.OriginalUrl,
+                ShortCode = shortUrl.ShortCode,
+                ExpiresAt = shortUrl.ExpiresAt,
+                CreatedAt = shortUrl.CreatedAt
+            };
         }
     }
 
@@ -77,30 +71,28 @@ public class LinksController : ControllerBase
         {
             _logger.Information("Getting short url");
             
-            try
+            ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
+            if (shortUrl is null)
             {
-                ShortUrl? shortUrl = await _linksService.GetCachedShortUrlByShortCodeAsync(shortCode);
-                if (shortUrl is null)
-                {
-                    _logger.Warning("Short url not found");
-                    
-                    return NotFound();
-                }
+                _logger.Warning("Short url not found");
                 
-                _logger.Information("Short url successfully got");
+                return Problem(
+                    title: "Invalid short code",
+                    detail: $"Short url by short code \"{shortCode}\" not found",
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "errors/invalid-short-code"
+                );
+            }
+            
+            _logger.Information("Short url successfully got");
 
-                return new ShortUrlResponse()
-                {
-                    OriginalUrl = shortUrl.OriginalUrl,
-                    ShortCode = shortUrl.ShortCode,
-                    ExpiresAt = shortUrl.ExpiresAt,
-                    CreatedAt = shortUrl.CreatedAt
-                };
-            }
-            catch (Exception)
+            return new ShortUrlResponse()
             {
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+                OriginalUrl = shortUrl.OriginalUrl,
+                ShortCode = shortUrl.ShortCode,
+                ExpiresAt = shortUrl.ExpiresAt,
+                CreatedAt = shortUrl.CreatedAt
+            };
         }
     }
 
@@ -115,25 +107,17 @@ public class LinksController : ControllerBase
         {
             _logger.Information("Getting short urls list with filters {@Filters}", filters);
             
-            try
+            var shortUrlsList = await _linksService.GetShortUrlsWithFiltersAsync(parsedUserId, filters.ExcludeExpiredUrls);
+            
+            _logger.Information("Found {ShortUrlsCount} short urls", shortUrlsList.Count);
+            
+            return shortUrlsList.Select(u => new ShortUrlResponse()
             {
-                var shortUrlsList = await _linksService.GetShortUrlsWithFiltersAsync(parsedUserId, filters.ExcludeExpiredUrls);
-                
-                _logger.Information("Found {ShortUrlsCount} short urls", shortUrlsList.Count);
-                
-                return shortUrlsList.Select(u => new ShortUrlResponse()
-                {
-                    OriginalUrl = u.OriginalUrl,
-                    ShortCode = u.ShortCode,
-                    CreatedAt = u.CreatedAt,
-                    ExpiresAt = u.ExpiresAt
-                }).ToList();
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Error while getting short urls list");
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+                OriginalUrl = u.OriginalUrl,
+                ShortCode = u.ShortCode,
+                CreatedAt = u.CreatedAt,
+                ExpiresAt = u.ExpiresAt
+            }).ToList();
         }
     }
 
@@ -149,22 +133,19 @@ public class LinksController : ControllerBase
         {
             _logger.Information("Deleting short url");
             
-            try
+            bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, parsedUserId);
+            if (!result)
             {
-                bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, parsedUserId);
-                if (!result)
-                {
-                    return NotFound();
-                }
-                
-                _logger.Information("Short url successfully deleted");
-                return NoContent();
+                return Problem(
+                    title: "Invalid short code",
+                    detail: $"Short url by short code \"{shortCode}\" not found",
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "errors/invalid-short-code"
+                );
             }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Error while deleting short url");
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+            
+            _logger.Information("Short url successfully deleted");
+            return NoContent();
         }
     }
 }

@@ -31,23 +31,15 @@ public class UsersController : ControllerBase
         {
             _logger.Information("Getting user");
             
-            try
+            var currentUser = await _userService.GetUserById(parsedUserId);
+            
+            _logger.Information("Got user");
+            
+            return new UserResponse()
             {
-                var currentUser = await _userService.GetUserById(parsedUserId);
-                
-                _logger.Information("Got user");
-                
-                var userResponse = new UserResponse()
-                {
-                    Username = currentUser.Login,
-                    RegistrationDate = currentUser.RegistrationAt
-                };
-                return userResponse;
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+                Username = currentUser.Login,
+                RegistrationDate = currentUser.RegistrationAt
+            };
         }
     }
 }
