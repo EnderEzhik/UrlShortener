@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
+using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Formatting.Compact;
 using Shortener.Data;
@@ -25,7 +26,11 @@ public class Program
             
             var builder = WebApplication.CreateBuilder(args);
 
+            Log.Debug("Configuring services...");
+            
             ConfigureServices(builder);
+            
+            Log.Debug("Services configured");
 
             var app = builder.Build();
 
@@ -65,6 +70,7 @@ public class Program
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.FromLogContext()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
             .WriteTo.File(
                 formatter: new CompactJsonFormatter(),
                 path: "logs/all/shortener-all.log",
@@ -86,7 +92,6 @@ public class Program
 
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
-        Log.Debug("Configuring services...");
         builder.Services.AddOpenApi();
         builder.Services.AddSerilog();
         
@@ -133,7 +138,5 @@ public class Program
             });
         
         builder.Services.AddControllers();
-        
-        Log.Debug("Services configured");
     }
 }
