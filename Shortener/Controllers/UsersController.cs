@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog.Context;
-using Shortener.Models.DTOs;
+using Shortener.DTOs;
 using Shortener.Services;
 
 namespace Shortener.Controllers;

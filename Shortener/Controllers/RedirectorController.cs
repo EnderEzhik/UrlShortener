@@ -22,30 +22,22 @@ public class RedirectorController : ControllerBase
         {
             _logger.Information("Redirecting");
             
-            try
+            var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
+            if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
             {
-                var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
-                if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
-                {
-                    _logger.Warning("Short url not found or expired");
+                _logger.Warning("Short url not found or expired");
 
-                    return Problem(
-                        title: "Invalid short code",
-                        detail: $"Short url by short code \"{shortCode}\" not found or expired",
-                        statusCode: StatusCodes.Status404NotFound,
-                        type: "errors/invalid-short-code"
-                    );
-                }
-
-                _logger.Information("Short url found");
-
-                return RedirectPermanent(url.OriginalUrl);
+                return Problem(
+                    title: "Invalid short code",
+                    detail: $"Short url by short code \"{shortCode}\" not found or expired",
+                    statusCode: StatusCodes.Status404NotFound,
+                    type: "errors/invalid-short-code"
+                );
             }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Error while redirecting to {shortCode}", shortCode);
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
+
+            _logger.Information("Short url found");
+
+            return RedirectPermanent(url.OriginalUrl);
         }
     }
 }

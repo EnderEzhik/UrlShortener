@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog.Context;
 using Shortener.Entities;
-using Shortener.Models;
-using Shortener.Models.DTOs;
+using Shortener.DTOs;
 using Shortener.Services;
 
 namespace Shortener.Controllers;

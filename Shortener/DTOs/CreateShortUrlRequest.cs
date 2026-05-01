@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
-namespace Shortener.Models;
+namespace Shortener.DTOs;
 
 public class CreateShortUrlRequest
 {

@@ -1,4 +1,4 @@
-namespace Shortener.Models.DTOs;
+namespace Shortener.DTOs;
 
 public class UserCreateRequest
 {
