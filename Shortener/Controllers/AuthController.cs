@@ -77,14 +77,14 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<JWTTokenResponse>> Login(LoginRequest loginData)
+    public async Task<ActionResult<JWTTokenResponse>> Login(LoginRequest requestData)
     {
-        using (LogContext.PushProperty("Login", loginData.Login))
+        using (LogContext.PushProperty("Login", requestData.Login))
         {
             _logger.Information("Authorization");
             
-            var user = await _userService.GetUserByLogin(loginData.Login);
-            if (user is null || user.Password != loginData.Password)
+            var user = await _userService.GetUserByLogin(requestData.Login);
+            if (user is null || user.Password != requestData.Password)
             {
                 _logger.Warning("User not found or password is incorrect");
                 
