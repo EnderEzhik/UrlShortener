@@ -1,5 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
+using Shortener.DTOs;
 using Shortener.Services;
+using Shortener.Services.Analytics;
 
 namespace Shortener.Controllers;
 
@@ -8,11 +11,13 @@ public class RedirectorController : ControllerBase
 {
     private readonly Serilog.ILogger _logger;
     private readonly LinksService _urlService;
+    private readonly AnalyticsBufferService _analyticsBufferService;
 
-    public RedirectorController(LinksService urlService)
+    public RedirectorController(LinksService urlService, AnalyticsBufferService analyticsBufferService)
     {
-        _urlService = urlService;
         _logger = Serilog.Log.ForContext<RedirectorController>();
+        _urlService = urlService;
+        _analyticsBufferService = analyticsBufferService;
     }
     
     [HttpGet("{shortCode}")]
@@ -23,6 +28,23 @@ public class RedirectorController : ControllerBase
             _logger.Information("Redirecting");
             
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
+            
+            var userIdRaw = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            var userId = int.Parse(userIdRaw);
+            
+            var clickAnalytic = new ClickAnalytics()
+            {
+                ShortCode = shortCode,
+                Timestamp = DateTimeOffset.UtcNow,
+                IpAddress = HttpContext.Connection.RemoteIpAddress.ToString(),
+                UserId = userId,
+                Referer = HttpContext.Request.Headers.Referer.ToString(),
+                UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
+                AcceptLanguage = HttpContext.Request.Headers.AcceptLanguage.ToString()
+            };
+            
+            _analyticsBufferService.WriteAsync(clickAnalytic);
+            
             if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
             {
                 _logger.Warning("Short url not found or expired");
