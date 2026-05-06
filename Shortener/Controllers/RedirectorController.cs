@@ -30,7 +30,8 @@ public class RedirectorController : ControllerBase
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
             
             var userIdRaw = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            var userId = int.Parse(userIdRaw);
+            int? userId = userIdRaw is not null ? int.Parse(userIdRaw) : null;
+            
             
             var clickAnalytic = new ClickAnalytics()
             {
@@ -38,9 +39,7 @@ public class RedirectorController : ControllerBase
                 Timestamp = DateTimeOffset.UtcNow,
                 IpAddress = HttpContext.Connection.RemoteIpAddress.ToString(),
                 UserId = userId,
-                Referer = HttpContext.Request.Headers.Referer.ToString(),
-                UserAgent = HttpContext.Request.Headers.UserAgent.ToString(),
-                AcceptLanguage = HttpContext.Request.Headers.AcceptLanguage.ToString()
+                Referer = HttpContext.Request.Headers.Referer.ToString()
             };
             
             _analyticsBufferService.WriteAsync(clickAnalytic);

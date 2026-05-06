@@ -8,8 +8,4 @@ public class Click
     public string IpAddress { get; set; } = null!;
     public int? UserId { get; set; }
     public string? Referer { get; set; }
-    public string? Device { get; set; }
-    public string? Platform { get; set; }
-    public string? CountryCode { get; set; }
-    public string? AcceptLanguage { get; set; }
 }

@@ -11,6 +11,7 @@ using Shortener.Data;
 using Shortener.Middlewares;
 using Shortener.Options;
 using Shortener.Services;
+using Shortener.Services.Analytics;
 
 namespace Shortener;
 
@@ -136,6 +137,10 @@ public class Program
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
                 };
             });
+        
+        
+        builder.Services.AddSingleton<AnalyticsBufferService>();
+        builder.Services.AddHostedService<AnalyticsProcessorService>();
         
         builder.Services.AddControllers();
     }
