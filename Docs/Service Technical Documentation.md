@@ -8,41 +8,150 @@
 - Просмотр списка созданных пользователем коротких ссылок
 - Просмотр базовой информации о себе (логин, дата регистрации, количество активных коротких ссылок)
 - Удалить короткую ссылку
-- Получить подробную информацию о короткой ссылке
-- Статистика переходов
-  - Количество переходов
+- Получить аналитику по короткой ссылке
+- Аналитика переходов
+  - Общее количество переходов
   - Количество уникальных перешедших пользователей
-  - Список уникальных платформ (windows, macos, android, ios...)
-  - Геораспределение переходов
   - Временное распределение переходов по дням и часам
-  - Количество переходов для каждого уникального пользователя
-  - Авторизованные переходы (авторизованный пользователь перешел по короткой ссылке)
-  - Откуда был произведен переход
 
-### Сущности
+## Нефункциональные требования
+- Время ответа API не должно превышать 100мс для нетребовательных действий
+    - Создание короткой ссылки
+    - Редирект
+    - Регистрация
+    - Авторизация
+    - Получение данных пользователя о себе
+    - Получение короткой ссылки по короткому коду
+    - Удаление короткой ссылки по короткому коду
+- Время ответа API не должно превышать 200мс для запросов передающих больший объем данных
+    - Получение списка ссылок пользователя (как с исключением коротких ссылок с истекшим сроком жизни, так и с ними)
+
+## Ограничения
+### Короткая ссылка
+- Длина короткого кода - 8 символов
+- Время истечения срока жизни короткой ссылки должно быть в будущем времени в момент её создания
+- Длина оригинальной ссылки не должна превышать 1000 символов
+- Если ссылка создана неавторизованным пользователем, то у неё нет владельца
+- Просмотр аналитики доступен только владельцу ссылки, если владельца нет, то аналитика недоступна
+
+### Пользователь
+- Длина логина должна быть от 4 до 20 символов
+- Длина пароля должна быть от 8 до 64 символов
+
+## Сущности
 - Короткая ссылка
   - Короткий код
   - Оригинальная ссылка
   - Владелец
   - Дата создания
   - Срок жизни
-  - Alias
-  - Количество доступных переходов
-  - Пароль для перехода
-  - Доступ только для авторизованных пользователей
 - Переход
   - Дата и время
   - IP
-  - Платформа
   - ID авторизованного пользователя при наличии
   - Исходный адрес
-  - Примерное местоположение
-  - UserAgent
-  - Переход по неактивной ссылке
-  - Поддерживаемый язык
 - Пользователь
   - Логин
   - Пароль
   - Дата регистрации
 
-### Бизнес правила
+# Low Level Design
+## Схема базы данных
+```postgresql
+CREATE TABLE ShortUrls(
+    ShortCode VARCHAR(8) PRIMARY KEY,
+    OriginalUrl TEXT NOT NULL,
+    OwnerId INTEGER NOT NULL REFERENCES Users(Id),
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    ExpiresAt TIMESTAMP WITH TIME ZONE
+);
+CREATE INDEX idx_short_code ON ShortUrls(ShortCode);
+CREATE TABLE Users(
+    Id INTEGER PRIMARY KEY,
+    Login VARCHAR(20) NOT NULL UNIQUE,
+    Password VARCHAR NOT NULL,
+    RegistrationAt TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE Clicks(
+    Id INTEGER PRIMARY KEY,
+    ShortCode VARCHAR(8) NOT NULL REFERENCES ShortUrls(ShortCode),
+    "RedirectAt" TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    IpAddress VARCHAR,
+    UserId INTEGER REFERENCES Users(Id),
+    Referer TEXT
+);
+CREATE INDEX idx_short_code ON Clicks(ShortCode);
+```
+
+## Endpoints
+### Создание короткой ссылки
+POST /api/links
+
+Request:
+```json
+{
+    "url": "https://example.com",
+    "expiresAt": "2026-01-00T00:00:00Z"
+}
+```
+
+Response:
+```json
+{
+    "shortCode": "1234abcd",
+    "expiresAt": "2026-01-00T00:00:00Z"
+}
+```
+
+Status Codes: 200, 400
+
+### Редирект по короткому коду
+GET /{shortCode}
+
+Request: path param
+
+Response: редирект 302
+
+Status Codes: 302, 404
+
+### Регистрация
+POST /api/auth/register
+
+Request:
+```json
+{
+    "login": "test_login",
+    "password": "secure_password_123"
+}
+```
+
+Response:
+```json
+{
+    "token": "jwt.token.test",
+    "expiresAt": "2026-01-00T00:00:00Z"
+}
+```
+
+Status Codes: 200, 400, 409
+
+### Авторизация
+POST /api/auth/login
+
+Request:
+```json
+{
+    "login": "test_login",
+    "password": "secure_password_123"
+}
+```
+
+Response:
+```json
+{
+    "token": "jwt.token.test",
+    "expiresAt": "2026-01-00T00:00:00Z"
+}
+```
+
+Status Codes: 200, 401
