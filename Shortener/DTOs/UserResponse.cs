@@ -2,6 +2,6 @@ namespace Shortener.DTOs;
 
 public class UserResponse
 {
-    public string Username { get; set; }
-    public DateTimeOffset RegistrationDate { get; set; }
+    public string Login { get; set; }
+    public DateTimeOffset RegistrationAt { get; set; }
 }

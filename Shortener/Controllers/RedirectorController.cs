@@ -36,7 +36,7 @@ public class RedirectorController : ControllerBase
             var clickAnalytic = new ClickAnalytics()
             {
                 ShortCode = shortCode,
-                Timestamp = DateTimeOffset.UtcNow,
+                RedirectAt = DateTimeOffset.UtcNow,
                 IpAddress = HttpContext.Connection.RemoteIpAddress.ToString(),
                 UserId = userId,
                 Referer = HttpContext.Request.Headers.Referer.ToString()

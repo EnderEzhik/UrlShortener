@@ -61,7 +61,7 @@ public class AuthController : ControllerBase
                 return new JWTTokenResponse()
                 {
                     Token = token,
-                    Expires = expires
+                    ExpiresAt = expires
                 };
             }
             catch (ArgumentException)
@@ -102,7 +102,7 @@ public class AuthController : ControllerBase
             return new JWTTokenResponse()
             {
                 Token = token,
-                Expires = expires
+                ExpiresAt = expires
             };
         }
     }

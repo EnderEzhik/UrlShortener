@@ -12,6 +12,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> context
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ShortUrl>().HasKey(u => u.ShortCode);
+        modelBuilder.Entity<ShortUrl>()
+            .HasOne(s => s.User)
+            .WithMany(u => u.ShortUrls)
+            .HasForeignKey(s => s.OwnerId);
         
         base.OnModelCreating(modelBuilder);
     }

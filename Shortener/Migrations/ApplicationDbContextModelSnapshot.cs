@@ -34,15 +34,15 @@ namespace Shortener.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<DateTimeOffset>("RedirectAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Referer")
                         .HasColumnType("text");
 
                     b.Property<string>("ShortCode")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("integer");
@@ -67,12 +67,12 @@ namespace Shortener.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("UserId")
+                    b.Property<int?>("OwnerId")
                         .HasColumnType("integer");
 
                     b.HasKey("ShortCode");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("OwnerId");
 
                     b.ToTable("Urls");
                 });
@@ -105,7 +105,7 @@ namespace Shortener.Migrations
                 {
                     b.HasOne("Shortener.Entities.User", "User")
                         .WithMany("ShortUrls")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("OwnerId");
 
                     b.Navigation("User");
                 });

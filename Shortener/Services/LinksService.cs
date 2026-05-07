@@ -37,7 +37,7 @@ public class LinksService
                 OriginalUrl = url,
                 ShortCode = shortCode,
                 ExpiresAt = expiresAt,
-                UserId = userId
+                OwnerId = userId
             };
         
             try
@@ -111,7 +111,7 @@ public class LinksService
         var query = _db.Urls.AsQueryable();
         if (userId.HasValue)
         {
-            query = query.Where(url => url.UserId == userId.Value);
+            query = query.Where(url => url.OwnerId == userId.Value);
         }
         if (excludeExpiredUrls)
         {
@@ -139,7 +139,7 @@ public class LinksService
             return false;
         }
         
-        if (shortUrl.UserId != userId)
+        if (shortUrl.OwnerId != userId)
         {
             _logger.Warning("User is trying to delete a short url that is not his own");
             return false;

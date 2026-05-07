@@ -37,8 +37,8 @@ public class UsersController : ControllerBase
             
             return new UserResponse()
             {
-                Username = currentUser.Login,
-                RegistrationDate = currentUser.RegistrationAt
+                Login = currentUser.Login,
+                RegistrationAt = currentUser.RegistrationAt
             };
         }
     }

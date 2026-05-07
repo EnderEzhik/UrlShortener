@@ -11,7 +11,7 @@ public class ShortUrl
     /// <summary>
     /// Owner user id
     /// </summary>
-    public int? UserId { get; set; }
+    public int? OwnerId { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ExpiresAt { get; set; }
     

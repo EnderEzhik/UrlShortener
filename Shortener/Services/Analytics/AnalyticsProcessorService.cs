@@ -51,7 +51,7 @@ public class AnalyticsProcessorService : BackgroundService
             var clicks = batch.Select(c => new Click()
             {
                 ShortCode = c.ShortCode,
-                Timestamp = c.Timestamp,
+                RedirectAt = c.RedirectAt,
                 IpAddress = c.IpAddress,
                 UserId = c.UserId,
                 Referer = c.Referer
