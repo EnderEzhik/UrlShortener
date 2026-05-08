@@ -155,3 +155,63 @@ Response:
 ```
 
 Status Codes: 200, 401
+
+### Получить список ссылок
+GET /api/links?ExcludeExpiredUrls=true
+
+Request: none
+
+Response:
+```json
+[
+    {
+        "OriginalUrl": "https://example.com",
+        "ShortCode": "1234abcd",
+        "CreatedAt": "2026-01-00T00:00:00Z",
+        "ExpiresAt": "2026-02-00T00:00:00Z"
+    }
+]
+```
+
+Status Codes: 200
+
+### Получить короткую ссылку по короткому коду
+GET /api/links/{shortCode}
+
+Request: none
+
+Response:
+```json
+{
+    "OriginalUrl": "https://example.com",
+    "ShortCode": "1234abcd",
+    "CreatedAt": "2026-01-00T00:00:00Z",
+    "ExpiresAt": "2026-02-00T00:00:00Z"
+}
+```
+
+Status Codes: 200, 404
+
+### Удалить короткую ссылку по короткому коду
+DELETE /api/links/{shortCode}
+
+Request: none
+
+Response: none
+
+Status Codes: 204, 404
+
+### Получить информацию о себе
+GET /api/users/me
+
+Request: none
+
+Response:
+```json
+{
+    "Login": "username",
+    "RegistrationAt": "2026-01-00T00:00:00Z"
+}
+```
+
+Status Codes: 200
