@@ -31,6 +31,7 @@ UrlShortener/                 # Solution
 │   ├── Data/                 # Контекст БД
 │   ├── Entities/             # Сущности EF Core
 │   ├── Extensions/           # Методы расширения
+│   ├── Middlewares/          # Промежуточные классы
 │   ├── Migrations/           # Миграции ef core
 │   ├── Models/               # Модели данных
 │   │   └── DTOs/             # DTO-классы для запросов/ответов API
