@@ -29,23 +29,45 @@ public class AuthController : ControllerBase
             
             if (requestData.Login.Length < 4)
             {
-                _logger.Warning("Login length is less than 4");
+                _logger.Warning("Login is not valid");
             
                 return Problem(
                     title: "Invalid login length",
-                    detail: "Login must contain at least 4 characters",
+                    detail: "Login length must be greater than or equal to 4",
                     statusCode: StatusCodes.Status400BadRequest,
                     type: "errors/invalid-login"
                 );
             }
-        
+            if (requestData.Login.Length > 20)
+            {
+                _logger.Warning("Login is not valid");
+            
+                return Problem(
+                    title: "Invalid login length",
+                    detail: "Login length must be less than or equal to 20",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-login"
+                );
+            }
+            
             if (requestData.Password.Length < 8)
             {
-                _logger.Warning("Password length is less than 8");
+                _logger.Warning("Password is not valid");
             
                 return Problem(
                     title: "Invalid password length",
-                    detail: "Password must contain at least 8 characters",
+                    detail: "Password length must be greater than or equal to 8",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-password"
+                );
+            }
+            if (requestData.Password.Length > 64)
+            {
+                _logger.Warning("Password is not valid");
+            
+                return Problem(
+                    title: "Invalid password length",
+                    detail: "Password length must be less than or equal to 64",
                     statusCode: StatusCodes.Status400BadRequest,
                     type: "errors/invalid-password"
                 );
@@ -67,7 +89,7 @@ public class AuthController : ControllerBase
             catch (ArgumentException)
             {
                 return Problem(
-                    title: "Not unique login",
+                    title: "Invalid login",
                     detail: "Login is already in use",
                     statusCode: StatusCodes.Status409Conflict,
                     type: "errors/invalid-login"
@@ -82,6 +104,52 @@ public class AuthController : ControllerBase
         using (LogContext.PushProperty("Login", requestData.Login))
         {
             _logger.Information("Authorization");
+            
+            if (requestData.Login.Length < 4)
+            {
+                _logger.Warning("Login is not valid");
+            
+                return Problem(
+                    title: "Invalid login length",
+                    detail: "Login length must be greater than or equal to 4",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-login"
+                );
+            }
+            if (requestData.Login.Length > 20)
+            {
+                _logger.Warning("Login is not valid");
+            
+                return Problem(
+                    title: "Invalid login length",
+                    detail: "Login length must be less than or equal to 20",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-login"
+                );
+            }
+            
+            if (requestData.Password.Length < 8)
+            {
+                _logger.Warning("Password is not valid");
+            
+                return Problem(
+                    title: "Invalid password length",
+                    detail: "Password length must be greater than or equal to 8",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-password"
+                );
+            }
+            if (requestData.Password.Length > 64)
+            {
+                _logger.Warning("Password is not valid");
+            
+                return Problem(
+                    title: "Invalid password length",
+                    detail: "Password length must be less than or equal to 64",
+                    statusCode: StatusCodes.Status400BadRequest,
+                    type: "errors/invalid-password"
+                );
+            }
             
             var user = await _userService.GetUserByLogin(requestData.Login);
             if (user is null || user.Password != requestData.Password)

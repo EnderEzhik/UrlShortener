@@ -106,7 +106,11 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(int? userId, bool excludeExpiredUrls)
+    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(
+        int? userId,
+        bool excludeExpiredUrls,
+        int page,
+        int pageSize)
     {
         var query = _db.Urls.AsQueryable();
         if (userId.HasValue)
@@ -120,7 +124,10 @@ public class LinksService
         
         try
         {
-            List<ShortUrl> shortUrls = await query.ToListAsync();
+            List<ShortUrl> shortUrls = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
             return shortUrls;
         }
         catch (Exception ex)

@@ -24,22 +24,19 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<ActionResult<UserResponse>> GetMe()
     {
-        var currentUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
-        var parsedUserId = int.Parse(currentUserId);
+        _logger.Information("Getting user");
         
-        using(LogContext.PushProperty("UserId", parsedUserId))
+        var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        var userId = int.Parse(rawUserId);
+        
+        var currentUser = await _userService.GetUserById(userId);
+        
+        _logger.Information("Got user");
+        
+        return new UserResponse()
         {
-            _logger.Information("Getting user");
-            
-            var currentUser = await _userService.GetUserById(parsedUserId);
-            
-            _logger.Information("Got user");
-            
-            return new UserResponse()
-            {
-                Login = currentUser.Login,
-                RegistrationAt = currentUser.RegistrationAt
-            };
-        }
+            Login = currentUser.Login,
+            RegistrationAt = currentUser.RegistrationAt
+        };
     }
 }

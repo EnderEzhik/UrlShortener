@@ -32,7 +32,6 @@ public class RedirectorController : ControllerBase
             var userIdRaw = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             int? userId = userIdRaw is not null ? int.Parse(userIdRaw) : null;
             
-            
             var clickAnalytic = new ClickAnalytics()
             {
                 ShortCode = shortCode,
