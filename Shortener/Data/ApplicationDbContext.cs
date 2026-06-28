@@ -7,7 +7,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> context
 {
     public DbSet<ShortUrl>  Urls { get; set; }
     public DbSet<User>  Users { get; set; }
-    public DbSet<Click> Clicks { get; set; }
+    public DbSet<Redirect> Redirects { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

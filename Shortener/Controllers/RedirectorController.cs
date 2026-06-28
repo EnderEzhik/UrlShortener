@@ -1,4 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using Shortener.DTOs;
 using Shortener.Services;
@@ -29,19 +28,11 @@ public class RedirectorController : ControllerBase
             
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
             
-            var userIdRaw = HttpContext.User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            int? userId = userIdRaw is not null ? int.Parse(userIdRaw) : null;
-            
-            var clickAnalytic = new ClickAnalytics()
+            var clickAnalytic = new RedirectAnalytics()
             {
                 ShortCode = shortCode,
-                RedirectAt = DateTimeOffset.UtcNow,
-                IpAddress = HttpContext.Connection.RemoteIpAddress.ToString(),
-                UserId = userId,
-                Referer = HttpContext.Request.Headers.Referer.ToString()
+                RedirectedAt = DateTimeOffset.UtcNow
             };
-            
-            _analyticsBufferService.WriteAsync(clickAnalytic);
             
             if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
             {
@@ -54,6 +45,8 @@ public class RedirectorController : ControllerBase
                     type: "errors/invalid-short-code"
                 );
             }
+            
+            _analyticsBufferService.WriteAsync(clickAnalytic);
 
             _logger.Information("Short url found");
 

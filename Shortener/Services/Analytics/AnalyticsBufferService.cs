@@ -5,7 +5,7 @@ namespace Shortener.Services.Analytics;
 
 public class AnalyticsBufferService
 {
-    private readonly Channel<ClickAnalytics> _channel;
+    private readonly Channel<RedirectAnalytics> _channel;
     private readonly Serilog.ILogger _logger;
     
     public AnalyticsBufferService()
@@ -17,12 +17,12 @@ public class AnalyticsBufferService
             SingleWriter = false,
             SingleReader = true
         };
-        _channel = Channel.CreateBounded<ClickAnalytics>(options);
+        _channel = Channel.CreateBounded<RedirectAnalytics>(options);
     }
 
     public bool IsEmpty => _channel.Reader.CanCount && _channel.Reader.Count <= 0; 
     
-    public async Task WriteAsync(ClickAnalytics analytics, CancellationToken ct = default)
+    public async Task WriteAsync(RedirectAnalytics analytics, CancellationToken ct = default)
     {
         try
         {
@@ -37,7 +37,7 @@ public class AnalyticsBufferService
         }
     }
     
-    public IAsyncEnumerable<ClickAnalytics> ReadAllAsync(CancellationToken ct = default)
+    public IAsyncEnumerable<RedirectAnalytics> ReadAllAsync(CancellationToken ct = default)
     {
         return _channel.Reader.ReadAllAsync(ct);
     }

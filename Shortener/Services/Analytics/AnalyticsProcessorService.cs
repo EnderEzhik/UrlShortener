@@ -19,7 +19,7 @@ public class AnalyticsProcessorService : BackgroundService
     
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var batch = new List<ClickAnalytics>(20);
+        var batch = new List<RedirectAnalytics>(20);
         
         await foreach (var analytics in _buffer.ReadAllAsync(stoppingToken))
         {
@@ -36,7 +36,7 @@ public class AnalyticsProcessorService : BackgroundService
             await SaveBatchAsync(batch, stoppingToken);
     }
     
-    private async Task SaveBatchAsync(List<ClickAnalytics> batch, CancellationToken ct)
+    private async Task SaveBatchAsync(List<RedirectAnalytics> batch, CancellationToken ct)
     {
         try
         {
@@ -48,15 +48,12 @@ public class AnalyticsProcessorService : BackgroundService
             // {
             // }
             
-            var clicks = batch.Select(c => new Click()
+            var clicks = batch.Select(c => new Redirect()
             {
                 ShortCode = c.ShortCode,
-                RedirectAt = c.RedirectAt,
-                IpAddress = c.IpAddress,
-                UserId = c.UserId,
-                Referer = c.Referer
+                RedirectedAt = c.RedirectedAt
             });
-            await db.Clicks.AddRangeAsync(clicks, ct);
+            await db.Redirects.AddRangeAsync(clicks, ct);
             await db.SaveChangesAsync(ct);
             
             _logger.Debug("Saved {Count} analytics events", batch.Count);
