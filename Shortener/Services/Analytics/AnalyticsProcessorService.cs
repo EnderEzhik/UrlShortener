@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Shortener.Data;
 using Shortener.DTOs;
 using Shortener.Entities;
@@ -43,20 +44,29 @@ public class AnalyticsProcessorService : BackgroundService
             using var scope = _services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             
-            // Обогащаем данные (гео, устройство и т.д.)
-            // foreach (var item in batch)
-            // {
-            // }
-            
-            var clicks = batch.Select(c => new Redirect()
+            var redirects = batch.Select(c => new Redirect()
             {
                 ShortCode = c.ShortCode,
                 RedirectedAt = c.RedirectedAt
-            });
-            await db.Redirects.AddRangeAsync(clicks, ct);
-            await db.SaveChangesAsync(ct);
+            }).ToList();
             
-            _logger.Debug("Saved {Count} analytics events", batch.Count);
+            await db.Redirects.AddRangeAsync(redirects, ct);
+            
+            var counts = redirects
+                .GroupBy(r => r.ShortCode)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var linkIds = counts.Keys.ToList();
+            var links = db.Urls
+                .Where(u => linkIds.Contains(u.ShortCode))
+                .ToList();
+
+            foreach (var link in links)
+            {
+                link.TotalRedirects += counts[link.ShortCode];
+            }
+            
+            await db.SaveChangesAsync(ct);
         }
         catch (Exception ex)
         {

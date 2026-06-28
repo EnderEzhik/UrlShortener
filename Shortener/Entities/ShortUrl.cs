@@ -14,6 +14,7 @@ public class ShortUrl
     public int? OwnerId { get; set; }
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? ExpiresAt { get; set; }
+    public int TotalRedirects { get; set; } = 0;
     
     public User? User { get; set; }
 }

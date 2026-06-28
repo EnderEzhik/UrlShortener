@@ -22,7 +22,7 @@ namespace Shortener.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Shortener.Entities.Click", b =>
+            modelBuilder.Entity("Shortener.Entities.Redirect", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -30,26 +30,16 @@ namespace Shortener.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("IpAddress")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("RedirectAt")
+                    b.Property<DateTimeOffset>("RedirectedAt")
                         .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Referer")
-                        .HasColumnType("text");
 
                     b.Property<string>("ShortCode")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("UserId")
-                        .HasColumnType("integer");
-
                     b.HasKey("Id");
 
-                    b.ToTable("Clicks");
+                    b.ToTable("Redirects");
                 });
 
             modelBuilder.Entity("Shortener.Entities.ShortUrl", b =>
@@ -68,6 +58,9 @@ namespace Shortener.Migrations
                         .HasColumnType("text");
 
                     b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TotalRedirects")
                         .HasColumnType("integer");
 
                     b.HasKey("ShortCode");
