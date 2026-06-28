@@ -27,7 +27,7 @@ public class LinksController : ControllerBase
         {
             _logger.Information("Creating short url");
 
-            if (!requestData.Url.StartsWith("https://") || !requestData.Url.StartsWith("http://"))
+            if (!requestData.Url.StartsWith("https://") && !requestData.Url.StartsWith("http://"))
             {
                 _logger.Warning("Invalid url");
                 return Problem(
