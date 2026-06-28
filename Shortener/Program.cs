@@ -4,9 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using Serilog;
-using Serilog.Events;
-using Serilog.Filters;
-using Serilog.Formatting.Compact;
 using Shortener.Data;
 using Shortener.Middlewares;
 using Shortener.Options;
@@ -19,20 +16,13 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        ConfigureLogging();
-
         try
         {
-            Log.Information("Application starting...");
-            
             var builder = WebApplication.CreateBuilder(args);
+            builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
 
-            Log.Debug("Configuring services...");
-            
             ConfigureServices(builder);
             
-            Log.Debug("Services configured");
-
             var app = builder.Build();
 
             app.UseSerilogRequestLogging();
@@ -66,35 +56,9 @@ public class Program
         }
     }
 
-    private static void ConfigureLogging()
-    {
-        Log.Logger = new LoggerConfiguration()
-            .MinimumLevel.Debug()
-            .Enrich.FromLogContext()
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .WriteTo.File(
-                formatter: new CompactJsonFormatter(),
-                path: "logs/all/shortener-all.log",
-                rollingInterval: RollingInterval.Day,
-                shared: true)
-            .WriteTo.Logger(lc => lc
-                .Enrich.FromLogContext()
-                .Filter.ByExcluding(Matching.FromSource("System"))
-                .Filter.ByExcluding(Matching.FromSource("Microsoft"))
-                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-                .WriteTo.File(
-                    formatter: new CompactJsonFormatter(),
-                    path: "logs/shortener.log",
-                    rollingInterval: RollingInterval.Day,
-                    shared: true)
-            )
-            .CreateLogger();
-    }
-
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
         builder.Services.AddOpenApi();
-        builder.Services.AddSerilog();
         
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
@@ -138,10 +102,14 @@ public class Program
                 };
             });
         
-        
         builder.Services.AddSingleton<AnalyticsBufferService>();
         builder.Services.AddHostedService<AnalyticsProcessorService>();
         
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                // options.JsonSerializerOptions.PropertyNamingPolicy =  null;
+            });
     }
 }

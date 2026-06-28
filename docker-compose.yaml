@@ -50,6 +50,8 @@ services:
         depends_on:
             database:
                 condition: service_healthy
+            redis:
+                condition: service_healthy
         networks:
             - internal
             - external
@@ -69,6 +71,19 @@ services:
         networks:
             - internal
             - external
+    
+    seq:
+        image: datalust/seq:latest
+        container_name: seq
+        environment:
+            - ACCEPT_EULA=Y
+            - SEQ_FIRSTRUN_ADMINPASSWORD=admin123
+        networks:
+            - internal
+            - external
+        ports:
+            - 5341:5341
+            - 8081:80
 
 networks:
     internal:
