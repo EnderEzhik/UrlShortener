@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Npgsql;
 using Scalar.AspNetCore;
 using Serilog;
 using Shortener.Data;
@@ -22,15 +23,17 @@ public class Program
             builder.Host.UseSerilog((context, loggerConfig) => loggerConfig.ReadFrom.Configuration(context.Configuration));
 
             ConfigureServices(builder);
-            
+
             var app = builder.Build();
+            
+            CheckDatabaseConnection(builder.Configuration);
 
             app.UseSerilogRequestLogging();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
             app.UseMiddleware<RequestLoggingMiddleware>();
-            
+
             app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
-            
+
             app.UseAuthentication();
             app.UseAuthorization();
 
@@ -41,7 +44,7 @@ public class Program
                 app.MapOpenApi();
                 app.MapScalarApiReference();
             }
-            
+
             Log.Information("Application started");
             app.Run();
         }
@@ -56,10 +59,48 @@ public class Program
         }
     }
 
+    private static void CheckDatabaseConnection(IConfiguration configuration)
+    {
+        const int maxAttempts = 3;
+        const int delaySeconds = 5;
+
+        var connectionString = configuration.GetConnectionString("DATABASE");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new InvalidOperationException("Database connection string 'DATABASE' is not configured.");
+        }
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                using var connection = new NpgsqlConnection(connectionString);
+                connection.Open();
+
+                Log.Information("Successfully connected to the database on attempt {Attempt}.", attempt);
+                return; // Success, exit the method
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Database connection attempt {Attempt} failed. Retrying in {DelaySeconds} seconds...", attempt, delaySeconds);
+
+                if (attempt < maxAttempts)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(delaySeconds));
+                }
+                else
+                {
+                    Log.Error(ex, "Failed to connect to the database after {MaxAttempts} attempts.", maxAttempts);
+                    throw; // Re-throw the exception to terminate the application
+                }
+            }
+        }
+    }
+
     private static void ConfigureServices(WebApplicationBuilder builder)
     {
         builder.Services.AddOpenApi();
-        
+
         builder.Services.AddDbContext<ApplicationDbContext>(options =>
         {
             options.UseNpgsql(builder.Configuration.GetConnectionString("DATABASE"));
@@ -73,11 +114,11 @@ public class Program
         });
 
         builder.Services.ConfigureOptions<JwtOptionsSetup>();
-        
+
         builder.Services.AddScoped<LinksService>();
         builder.Services.AddScoped<UserService>();
         builder.Services.AddScoped<JwtService>();
-        
+
         var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
                          ?? throw new InvalidOperationException("Jwt options are not configured. Missing 'Jwt' section in configuration.");
 
@@ -101,10 +142,10 @@ public class Program
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey))
                 };
             });
-        
+
         builder.Services.AddSingleton<AnalyticsBufferService>();
         builder.Services.AddHostedService<AnalyticsProcessorService>();
-        
+
         builder.Services.AddControllers()
             .AddJsonOptions(options =>
             {
