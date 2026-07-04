@@ -4,6 +4,7 @@ using StackExchange.Redis;
 using Serilog.Context;
 using Shortener.Common.Utils;
 using Shortener.Data;
+using Shortener.DTOs;
 using Shortener.Entities;
 using Shortener.Extensions;
 
@@ -31,7 +32,7 @@ public class LinksService
         using (LogContext.PushProperty("ShortCode", shortCode))
         {
             _logger.Debug("Short code generated");
-            
+
             var shortUrl = new ShortUrl()
             {
                 OriginalUrl = url,
@@ -39,14 +40,14 @@ public class LinksService
                 ExpiresAt = expiresAt,
                 OwnerId = userId
             };
-        
+
             try
             {
                 _db.Urls.Add(shortUrl);
                 await _db.SaveChangesAsync();
-                
+
                 _logger.Information("Short url saved to database");
-                
+
                 return shortUrl;
             }
             catch (Exception ex)
@@ -73,7 +74,7 @@ public class LinksService
     public async Task<ShortUrl?> GetCachedShortUrlByShortCodeAsync(string shortCode)
     {
         ShortUrl? shortUrl;
-        
+
         try
         {
             shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
@@ -87,7 +88,7 @@ public class LinksService
         {
             _logger.Error(ex, "Cache error while getting short url");
         }
-        
+
         shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is not null)
         {
@@ -121,7 +122,7 @@ public class LinksService
         {
             query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTimeOffset.UtcNow);
         }
-        
+
         try
         {
             List<ShortUrl> shortUrls = await query
@@ -137,6 +138,34 @@ public class LinksService
         }
     }
 
+    public async Task<ShortUrl?> UpdateUrlAsync(string shortCode, int userId, UpdateUrlRequest requestData)
+    {
+        var url = await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
+        if (url is null)
+        {
+            _logger.Warning("Short url not found");
+            return null;
+        }
+
+        if (url.OwnerId != userId)
+        {
+            _logger.Warning("User is trying to update a short url that is not his own");
+            return null;
+        }
+
+        if (requestData.OriginalUrl is not null && requestData.OriginalUrl != url.OriginalUrl)
+        {
+            url.OriginalUrl = requestData.OriginalUrl;
+        }
+        if (requestData.ExpiresAt is not null && requestData.ExpiresAt != url.ExpiresAt)
+        {
+            url.ExpiresAt = requestData.ExpiresAt;
+        }
+
+        await _db.SaveChangesAsync();
+        return url;
+    }
+
     public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode, int userId)
     {
         ShortUrl? shortUrl = await GetUrlByShortCodeAsync(shortCode);
@@ -145,17 +174,17 @@ public class LinksService
             _logger.Warning("Short url not found");
             return false;
         }
-        
+
         if (shortUrl.OwnerId != userId)
         {
             _logger.Warning("User is trying to delete a short url that is not his own");
             return false;
         }
-        
+
         try
         {
             await _cache.RemoveAsync(shortCode);
-            
+
             _logger.Debug("Short url deleted from cache");
         }
         catch (Exception e)
@@ -163,14 +192,14 @@ public class LinksService
             _logger.Error(e, "Cache error while deleting short url");
             throw;
         }
-        
+
         try
         {
             _db.Urls.Remove(shortUrl);
             await _db.SaveChangesAsync();
-            
+
             _logger.Debug("Short url deleted from database");
-            
+
             return true;
         }
         catch (Exception e)

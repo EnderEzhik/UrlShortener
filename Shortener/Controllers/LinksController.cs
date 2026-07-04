@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog.Context;
 using Shortener.DTOs;
+using Shortener.Errors;
 using Shortener.Services;
 
 namespace Shortener.Controllers;
@@ -13,7 +14,7 @@ public class LinksController : ControllerBase
 {
     private readonly Serilog.ILogger _logger;
     private readonly LinksService _linksService;
-    
+
     public LinksController(LinksService linksService)
     {
         _linksService = linksService;
@@ -131,6 +132,33 @@ public class LinksController : ControllerBase
             CreatedAt = u.CreatedAt,
             ExpiresAt = u.ExpiresAt
         }).ToList();
+    }
+
+    [Authorize]
+    [HttpPut("/{shortCode}")]
+    public async Task<ActionResult<ShortUrlResponse>> UpdateUrlAsync(string shortCode, [FromBody] UpdateUrlRequest requestData)
+    {
+        using var _ = LogContext.PushProperty("ShortCode", shortCode);
+        _logger.Information("Updating short url");
+
+        var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
+        int userId = int.Parse(rawUserId);
+
+        var updatedUrl = await _linksService.UpdateUrlAsync(shortCode, userId, requestData);
+        if (updatedUrl is null)
+        {
+            return this.Problem(ApiErrors.IncorrectShortCode);
+        }
+
+        _logger.Information("Short url successfully updated");
+
+        return new ShortUrlResponse()
+        {
+            ShortCode = updatedUrl.ShortCode,
+            OriginalUrl = updatedUrl.OriginalUrl,
+            CreatedAt = updatedUrl.CreatedAt,
+            ExpiresAt = updatedUrl.ExpiresAt
+        };
     }
 
     [Authorize]
