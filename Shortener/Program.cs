@@ -10,6 +10,7 @@ using Shortener.Middlewares;
 using Shortener.Options;
 using Shortener.Services;
 using Shortener.Services.Analytics;
+using StackExchange.Redis;
 
 namespace Shortener;
 
@@ -25,8 +26,9 @@ public class Program
             ConfigureServices(builder);
 
             var app = builder.Build();
-            
+
             CheckDatabaseConnection(builder.Configuration);
+            CheckRedisConnection(builder.Configuration);
 
             app.UseSerilogRequestLogging();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
@@ -91,6 +93,44 @@ public class Program
                 else
                 {
                     Log.Error(ex, "Failed to connect to the database after {MaxAttempts} attempts.", maxAttempts);
+                    throw; // Re-throw the exception to terminate the application
+                }
+            }
+        }
+    }
+
+    private static void CheckRedisConnection(IConfiguration configuration)
+    {
+        const int maxAttempts = 3;
+        const int delaySeconds = 5;
+
+        var connectionString = configuration.GetConnectionString("REDIS");
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new InvalidOperationException("Redis connection string 'REDIS' is not configured.");
+        }
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                var connection = ConnectionMultiplexer.Connect(connectionString);
+                connection.Close();
+
+                Log.Information("Successfully connected to Redis on attempt {Attempt}.", attempt);
+                return; // Success, exit the method
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Redis connection attempt {Attempt} failed. Retrying in {DelaySeconds} seconds...", attempt, delaySeconds);
+
+                if (attempt < maxAttempts)
+                {
+                    Thread.Sleep(TimeSpan.FromSeconds(delaySeconds));
+                }
+                else
+                {
+                    Log.Error(ex, "Failed to connect to Redis after {MaxAttempts} attempts.", maxAttempts);
                     throw; // Re-throw the exception to terminate the application
                 }
             }
