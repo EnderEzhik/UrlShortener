@@ -18,22 +18,22 @@ public class RedirectorController : ControllerBase
         _urlService = urlService;
         _analyticsBufferService = analyticsBufferService;
     }
-    
+
     [HttpGet("{shortCode}")]
     public async Task<IActionResult> RedirectFromShortCode(string shortCode)
     {
         using (Serilog.Context.LogContext.PushProperty("ShortCode", shortCode))
         {
             _logger.Information("Redirecting");
-            
+
             var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
-            
+
             var clickAnalytic = new RedirectAnalytics()
             {
                 ShortCode = shortCode,
                 RedirectedAt = DateTimeOffset.UtcNow
             };
-            
+
             if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
             {
                 _logger.Warning("Short url not found or expired");
@@ -45,12 +45,12 @@ public class RedirectorController : ControllerBase
                     type: "errors/invalid-short-code"
                 );
             }
-            
+
             _analyticsBufferService.WriteAsync(clickAnalytic);
 
             _logger.Information("Short url found");
 
-            return RedirectPermanent(url.OriginalUrl);
+            return Redirect(url.OriginalUrl);
         }
     }
 }
