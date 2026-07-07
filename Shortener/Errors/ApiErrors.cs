@@ -47,6 +47,34 @@ public static class ApiErrors
         StatusCode: StatusCodes.Status404NotFound,
         Detail: "Url with this short code was not found or you do not have access rights to this object"
     );
+
+    public static readonly ApiError InternalServerError = new(
+        Type: "errors/internal-server-error",
+        Title: "Internal server error",
+        StatusCode: StatusCodes.Status500InternalServerError,
+        Detail: "An unexpected error occurred"
+    );
+
+    public static readonly ApiError IncorrectLoginLength = new(
+        Type: "errors/incorrect-login-length",
+        Title: "Incorrect login length",
+        StatusCode: StatusCodes.Status400BadRequest,
+        Detail: "Login length should be greater than or equal to 4 and less than or equal to 20"
+    );
+
+    public static readonly ApiError IncorrectPasswordLength = new(
+        Type: "errors/incorrect-password-length",
+        Title: "Incorrect password length",
+        StatusCode: StatusCodes.Status400BadRequest,
+        Detail: "Password length should be greater than or equal to 8 and less than or equal to 64"
+    );
+
+    public static readonly ApiError IncorrectLoginOrPassword = new(
+        Type: "errors/incorrect-login-or-password",
+        Title: "Incorrect login or password",
+        StatusCode: StatusCodes.Status400BadRequest,
+        Detail: "Incorrect login or password"
+    );
 }
 
 public static class ControllerBaseExtensions

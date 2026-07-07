@@ -29,79 +29,47 @@ public class LinksService
     {
         string shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
 
-        using (LogContext.PushProperty("ShortCode", shortCode))
+        using var _ = LogContext.PushProperty("ShortCode", shortCode);
+        _logger.Debug("Short code generated");
+
+        var shortUrl = new ShortUrl()
         {
-            _logger.Debug("Short code generated");
+            OriginalUrl = url,
+            ShortCode = shortCode,
+            ExpiresAt = expiresAt,
+            OwnerId = userId
+        };
 
-            var shortUrl = new ShortUrl()
-            {
-                OriginalUrl = url,
-                ShortCode = shortCode,
-                ExpiresAt = expiresAt,
-                OwnerId = userId
-            };
+        _db.Urls.Add(shortUrl);
+        await _db.SaveChangesAsync();
 
-            try
-            {
-                _db.Urls.Add(shortUrl);
-                await _db.SaveChangesAsync();
+        _logger.Information("Short url saved to database");
 
-                _logger.Information("Short url saved to database");
-
-                return shortUrl;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "Database error while saving short url");
-                throw;
-            }
-        }
+        return shortUrl;
     }
 
     public async Task<ShortUrl?> GetUrlByShortCodeAsync(string shortCode)
     {
-        try
-        {
-            return await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e, "Database error while getting short url");
-            throw;
-        }
+        return await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
     }
 
     public async Task<ShortUrl?> GetCachedShortUrlByShortCodeAsync(string shortCode)
     {
         ShortUrl? shortUrl;
 
-        try
+        shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
+        if (shortUrl is not null)
         {
-            shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
-            if (shortUrl is not null)
-            {
-                _logger.Debug("Short url found in cache");
-                return shortUrl;
-            }
-        }
-        catch (RedisConnectionException ex)
-        {
-            _logger.Error(ex, "Cache error while getting short url");
+            _logger.Debug("Short url found in cache");
+            return shortUrl;
         }
 
         shortUrl = await GetUrlByShortCodeAsync(shortCode);
         if (shortUrl is not null)
         {
             _logger.Debug("Short url found in database");
-            try
-            {
-                await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
-                _logger.Debug("Short url successfully saved in cache");
-            }
-            catch (RedisConnectionException e)
-            {
-                _logger.Error(e, "Cache error while saving short url");
-            }
+            await _cache.SetRecordAsync<ShortUrl>(shortCode, shortUrl);
+            _logger.Debug("Short url successfully saved in cache");
         }
 
         return shortUrl;
@@ -123,19 +91,11 @@ public class LinksService
             query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTimeOffset.UtcNow);
         }
 
-        try
-        {
-            List<ShortUrl> shortUrls = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-            return shortUrls;
-        }
-        catch (Exception ex)
-        {
-            _logger.Error(ex, "Database error while getting short urls list");
-            throw;
-        }
+        List<ShortUrl> shortUrls = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return shortUrls;
     }
 
     public async Task<ShortUrl?> UpdateUrlAsync(string shortCode, int userId, UpdateUrlRequest requestData)
@@ -181,31 +141,15 @@ public class LinksService
             return false;
         }
 
-        try
-        {
-            await _cache.RemoveAsync(shortCode);
+        await _cache.RemoveAsync(shortCode);
 
-            _logger.Debug("Short url deleted from cache");
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e, "Cache error while deleting short url");
-            throw;
-        }
+        _logger.Debug("Short url deleted from cache");
 
-        try
-        {
-            _db.Urls.Remove(shortUrl);
-            await _db.SaveChangesAsync();
+        _db.Urls.Remove(shortUrl);
+        await _db.SaveChangesAsync();
 
-            _logger.Debug("Short url deleted from database");
+        _logger.Debug("Short url deleted from database");
 
-            return true;
-        }
-        catch (Exception e)
-        {
-            _logger.Error(e, "Database error while deleting short url");
-            throw;
-        }
+        return true;
     }
 }

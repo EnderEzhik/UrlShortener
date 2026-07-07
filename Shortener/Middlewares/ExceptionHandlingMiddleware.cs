@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
+using Shortener.Errors;
 
 namespace Shortener.Middlewares;
 
@@ -24,10 +25,10 @@ public class ExceptionHandlingMiddleware
 
             var problem = new ProblemDetails
             {
-                Title = "Internal Server Error",
-                Status = StatusCodes.Status500InternalServerError,
-                Detail = "An unexpected error occurred",
-                Type = "errors/internal-error"//TODO: позже заменить на документированную ошибку
+                Title = ApiErrors.InternalServerError.Title,
+                Status = ApiErrors.InternalServerError.StatusCode,
+                Detail = ApiErrors.InternalServerError.Detail,
+                Type = ApiErrors.InternalServerError.Type
             };
 
             problem.Extensions["traceId"] = context.TraceIdentifier;
