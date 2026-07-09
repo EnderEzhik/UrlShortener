@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Serilog.Context;
 using Shortener.DTOs;
 using Shortener.Services;
 
@@ -26,10 +25,10 @@ public class UsersController : ControllerBase
     {
         _logger.Information("Getting user");
         
-        var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
         var userId = int.Parse(rawUserId);
         
-        var currentUser = await _userService.GetUserById(userId);
+        var currentUser = await _userService.GetUserByIdAsync(userId);
         
         _logger.Information("Got user");
         

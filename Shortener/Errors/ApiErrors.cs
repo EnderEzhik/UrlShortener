@@ -48,6 +48,13 @@ public static class ApiErrors
         Detail: "Url with this short code was not found or you do not have access rights to this object"
     );
 
+    public static readonly ApiError IncorrectOrExpiredShortCode = new(
+        Type: "errors/incorrect-or-expired-short-code",
+        Title: "Incorrect or expired-short code",
+        StatusCode: StatusCodes.Status404NotFound,
+        Detail: "Short url with this short code not found or expired"
+    );
+
     public static readonly ApiError InternalServerError = new(
         Type: "errors/internal-server-error",
         Title: "Internal server error",
@@ -74,6 +81,13 @@ public static class ApiErrors
         Title: "Incorrect login or password",
         StatusCode: StatusCodes.Status400BadRequest,
         Detail: "Incorrect login or password"
+    );
+
+    public static readonly ApiError LoginIsAlreadyInUse = new(
+        Type: "errors/login-is-already-in-use",
+        Title: "Login is already in use",
+        StatusCode: StatusCodes.Status409Conflict,
+        Detail: "Login is already in use"
     );
 }
 

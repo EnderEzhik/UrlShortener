@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Shortener.DTOs;
+using Shortener.Errors;
 using Shortener.Services;
 using Shortener.Services.Analytics;
 
@@ -20,37 +21,28 @@ public class RedirectorController : ControllerBase
     }
 
     [HttpGet("{shortCode}")]
-    public async Task<IActionResult> RedirectFromShortCode(string shortCode)
+    public async Task<IActionResult> RedirectFromShortCodeAsync(string shortCode)
     {
-        using (Serilog.Context.LogContext.PushProperty("ShortCode", shortCode))
+        using var _ = Serilog.Context.LogContext.PushProperty("ShortCode", shortCode);
+        _logger.Information("Redirecting");
+
+        var url = await _urlService.GetCachedShortUrlAsync(shortCode);
+
+        var clickAnalytic = new RedirectAnalytics()
         {
-            _logger.Information("Redirecting");
+            ShortCode = shortCode,
+            RedirectedAt = DateTimeOffset.UtcNow
+        };
 
-            var url = await _urlService.GetCachedShortUrlByShortCodeAsync(shortCode);
+        _analyticsBufferService.WriteAsync(clickAnalytic);
 
-            var clickAnalytic = new RedirectAnalytics()
-            {
-                ShortCode = shortCode,
-                RedirectedAt = DateTimeOffset.UtcNow
-            };
-
-            if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
-            {
-                _logger.Warning("Short url not found or expired");
-
-                return Problem(
-                    title: "Invalid short code",
-                    detail: $"Short url by short code \"{shortCode}\" not found or expired",
-                    statusCode: StatusCodes.Status404NotFound,
-                    type: "errors/invalid-short-code"
-                );
-            }
-
-            _analyticsBufferService.WriteAsync(clickAnalytic);
-
-            _logger.Information("Short url found");
-
-            return Redirect(url.OriginalUrl);
+        if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
+        {
+            _logger.Warning("Short url not found or expired");
+            return this.Problem(ApiErrors.IncorrectOrExpiredShortCode);
         }
+
+        _logger.Information("Successfully redirected");
+        return Redirect(url.OriginalUrl);
     }
 }

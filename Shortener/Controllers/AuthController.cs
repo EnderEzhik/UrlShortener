@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("register")]
-    public async Task<ActionResult<JWTTokenResponse>> Register(UserCreateRequest requestData)
+    public async Task<ActionResult<JWTTokenResponse>> RegisterAsync(UserCreateRequest requestData)
     {
         using var _ = LogContext.PushProperty("Login", requestData.Login);
         _logger.Information("Registering new user");
@@ -43,7 +43,7 @@ public class AuthController : ControllerBase
 
         try
         {
-            var newUser = await _userService.CreateUser(requestData.Login, requestData.Password);
+            var newUser = await _userService.CreateUserAsync(requestData);
 
             _logger.Information("New user registered");
 
@@ -56,17 +56,12 @@ public class AuthController : ControllerBase
         }
         catch (ArgumentException)
         {
-            return Problem(
-                title: "Invalid login",
-                detail: "Login is already in use",
-                statusCode: StatusCodes.Status409Conflict,
-                type: "errors/invalid-login"
-            );
+            return this.Problem(ApiErrors.LoginIsAlreadyInUse);
         }
     }
 
     [HttpPost("login")]
-    public async Task<ActionResult<JWTTokenResponse>> Login(LoginRequest requestData)
+    public async Task<ActionResult<JWTTokenResponse>> LoginAsync(LoginRequest requestData)
     {
         using var _ = LogContext.PushProperty("Login", requestData.Login);
         _logger.Information("Authorization");
@@ -74,24 +69,22 @@ public class AuthController : ControllerBase
         if (requestData.Login.Length < 4 || requestData.Login.Length > 20)
         {
             _logger.Warning("Login length is incorrect");
-
             return this.Problem(ApiErrors.IncorrectLoginLength);
         }
 
         if (requestData.Password.Length < 8 || requestData.Password.Length > 64)
         {
             _logger.Warning("Password length is incorrect");
-
             return this.Problem(ApiErrors.IncorrectPasswordLength);
         }
 
-        var user = await _userService.GetUserByLogin(requestData.Login);
+        var user = await _userService.GetUserByLoginAsync(requestData.Login);
         if (user is null || user.Password != requestData.Password)
         {
             _logger.Warning("User not found or password is incorrect");
-
             return this.Problem(ApiErrors.IncorrectLoginOrPassword);
         }
+
         var (token, expires) = _jwtService.GenerateJwtToken(user);
 
         _logger.Information("Successful authorization");

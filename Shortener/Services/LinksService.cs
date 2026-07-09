@@ -25,7 +25,7 @@ public class LinksService
         SHORT_CODE_LENGTH = config.GetValue<int>("SHORT_CODE_LENGTH");
     }
 
-    public async Task<ShortUrl> CreateShortUrlAsync(int? userId, string url, DateTimeOffset? expiresAt)
+    public async Task<ShortUrl> CreateShortUrlAsync(int? userId, CreateShortUrlRequest  requestData)
     {
         string shortCode = ShortCodeGenerator.GenerateCode(SHORT_CODE_LENGTH);
 
@@ -34,9 +34,9 @@ public class LinksService
 
         var shortUrl = new ShortUrl()
         {
-            OriginalUrl = url,
+            OriginalUrl = requestData.Url,
             ShortCode = shortCode,
-            ExpiresAt = expiresAt,
+            ExpiresAt = requestData.ExpiresAt,
             OwnerId = userId
         };
 
@@ -48,12 +48,12 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<ShortUrl?> GetUrlByShortCodeAsync(string shortCode)
+    public async Task<ShortUrl?> GetShortUrlAsync(string shortCode)
     {
         return await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
     }
 
-    public async Task<ShortUrl?> GetCachedShortUrlByShortCodeAsync(string shortCode)
+    public async Task<ShortUrl?> GetCachedShortUrlAsync(string shortCode)
     {
         ShortUrl? shortUrl;
 
@@ -64,7 +64,7 @@ public class LinksService
             return shortUrl;
         }
 
-        shortUrl = await GetUrlByShortCodeAsync(shortCode);
+        shortUrl = await GetShortUrlAsync(shortCode);
         if (shortUrl is not null)
         {
             _logger.Debug("Short url found in database");
@@ -75,30 +75,26 @@ public class LinksService
         return shortUrl;
     }
 
-    public async Task<List<ShortUrl>> GetShortUrlsWithFiltersAsync(
-        int? userId,
-        bool excludeExpiredUrls,
-        int page,
-        int pageSize)
+    public async Task<List<ShortUrl>> GetShortUrlsListAsync(int? userId, UrlsFiltersRequest filters)
     {
         var query = _db.Urls.AsQueryable();
         if (userId.HasValue)
         {
             query = query.Where(url => url.OwnerId == userId.Value);
         }
-        if (excludeExpiredUrls)
+        if (filters.ExcludeExpiredUrls)
         {
             query = query.Where(url => !url.ExpiresAt.HasValue || url.ExpiresAt > DateTimeOffset.UtcNow);
         }
 
         List<ShortUrl> shortUrls = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
+            .Skip((filters.Page - 1) * filters.PageSize)
+            .Take(filters.PageSize)
             .ToListAsync();
         return shortUrls;
     }
 
-    public async Task<ShortUrl?> UpdateUrlAsync(string shortCode, int userId, UpdateUrlRequest requestData)
+    public async Task<ShortUrl?> UpdateShortUrlAsync(string shortCode, int userId, UpdateUrlRequest requestData)
     {
         var url = await _db.Urls.SingleOrDefaultAsync(url => url.ShortCode == shortCode);
         if (url is null)
@@ -126,9 +122,9 @@ public class LinksService
         return url;
     }
 
-    public async Task<bool> DeleteShortUrlByShortCodeAsync(string shortCode, int userId)
+    public async Task<bool> DeleteShortUrlAsync(string shortCode, int userId)
     {
-        ShortUrl? shortUrl = await GetUrlByShortCodeAsync(shortCode);
+        ShortUrl? shortUrl = await GetShortUrlAsync(shortCode);
         if (shortUrl is null)
         {
             _logger.Warning("Short url not found");

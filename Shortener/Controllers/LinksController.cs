@@ -22,7 +22,7 @@ public class LinksController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<ShortUrlResponse>> CreateShortUrl(CreateShortUrlRequest requestData)
+    public async Task<ActionResult<ShortUrlResponse>> CreateShortUrlAsync(CreateShortUrlRequest requestData)
     {
         using var _ = LogContext.PushProperty("Url", requestData.Url);
         _logger.Information("Creating short url");
@@ -48,7 +48,7 @@ public class LinksController : ControllerBase
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         int? userId = !string.IsNullOrEmpty(rawUserId) ? int.Parse(rawUserId) : null;
 
-        var shortUrl = await _linksService.CreateShortUrlAsync(userId, requestData.Url, requestData.ExpiresAt);
+        var shortUrl = await _linksService.CreateShortUrlAsync(userId, requestData);
 
         _logger.Information("Short url successfully created");
 
@@ -63,9 +63,10 @@ public class LinksController : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<ShortUrlResponse>>> GetShortUrlsWithFilters([FromQuery] UrlsFiltersRequest filters)
+    public async Task<ActionResult<List<ShortUrlResponse>>> GetShortUrlsListAsync([FromQuery] UrlsFiltersRequest filters)
     {
-        _logger.Information("Getting short urls list with filters {@Filters}", filters);
+        using var _ = LogContext.PushProperty("Filters", filters);
+        _logger.Information("Getting short urls list");
 
         if (filters.Page <= 0)
         {
@@ -75,18 +76,14 @@ public class LinksController : ControllerBase
 
         if (filters.PageSize <= 0 || filters.PageSize > 100)
         {
-            _logger.Information("The page size is less than 1 or greater than 100");
+            _logger.Information("Page size is less than 1 or greater than 100");
             return this.Problem(ApiErrors.IncorrectPageSize);
         }
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
         int userId = int.Parse(rawUserId);
 
-        var shortUrlsList = await _linksService.GetShortUrlsWithFiltersAsync(
-            userId,
-            filters.ExcludeExpiredUrls,
-            filters.Page,
-            filters.PageSize);
+        var shortUrlsList = await _linksService.GetShortUrlsListAsync(userId, filters);
 
         _logger.Information("Found {ShortUrlsCount} short urls", shortUrlsList.Count);
 
@@ -100,8 +97,8 @@ public class LinksController : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("/{shortCode}")]
-    public async Task<ActionResult<ShortUrlResponse>> UpdateUrlAsync(string shortCode, [FromBody] UpdateUrlRequest requestData)
+    [HttpPut("{shortCode}")]
+    public async Task<ActionResult<ShortUrlResponse>> UpdateShortUrlAsync(string shortCode, [FromBody] UpdateUrlRequest requestData)
     {
         using var _ = LogContext.PushProperty("ShortCode", shortCode);
         _logger.Information("Updating short url");
@@ -109,7 +106,7 @@ public class LinksController : ControllerBase
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
         int userId = int.Parse(rawUserId);
 
-        var updatedUrl = await _linksService.UpdateUrlAsync(shortCode, userId, requestData);
+        var updatedUrl = await _linksService.UpdateShortUrlAsync(shortCode, userId, requestData);
         if (updatedUrl is null)
         {
             return this.Problem(ApiErrors.IncorrectShortCode);
@@ -128,7 +125,7 @@ public class LinksController : ControllerBase
 
     [Authorize]
     [HttpDelete("{shortCode}")]
-    public async Task<ActionResult> DeleteShortUrlByShortCode(string shortCode)
+    public async Task<ActionResult> DeleteShortUrlAsync(string shortCode)
     {
         using var _ = LogContext.PushProperty("ShortCode", shortCode);
         _logger.Information("Deleting short url");
@@ -136,7 +133,7 @@ public class LinksController : ControllerBase
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
         var userId = int.Parse(rawUserId);
 
-        bool result = await _linksService.DeleteShortUrlByShortCodeAsync(shortCode, userId);
+        bool result = await _linksService.DeleteShortUrlAsync(shortCode, userId);
         if (!result)
         {
             return this.Problem(ApiErrors.IncorrectShortCode);
