@@ -132,6 +132,36 @@ body {
     opacity: 1;
 }
 
+.expiry-input-group {
+    position: relative;
+    display: flex;
+}
+
+.expiry-clear-btn {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: color 0.2s ease, background 0.2s ease;
+    font-size: 12px;
+}
+
+.expiry-clear-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
 .result-wrap {
     background: var(--surface-strong);
     border: 1px solid var(--border);
@@ -215,4 +245,27 @@ body {
 .urls-list-overflow {
     overflow: auto;
     max-height: min(70vh, 520px);
+}
+
+/* Модальное окно редактирования ссылки */
+.edit-url-modal-content {
+    background: var(--surface-strong);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+}
+
+.edit-url-modal-content .modal-header {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78));
+    border-bottom: 1px solid var(--border);
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.edit-url-modal-content .modal-footer {
+    border-top: 1px solid var(--border);
+}
+
+.modal-backdrop.show {
+    opacity: 0.35;
 }

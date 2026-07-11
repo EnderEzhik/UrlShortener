@@ -1,3 +1,4 @@
-const apiServerAddress = "http://localhost:5000/api";
+const serverAddress = "http://localhost:5000";
+const apiServerAddress = `${serverAddress}/api`;
 
-export {apiServerAddress};
+export {serverAddress, apiServerAddress};

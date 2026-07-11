@@ -1,3 +1,5 @@
+import { serverAddress } from "./config.js";
+
 function formatDate(value) {
     if (!value) return "—";
     const d = new Date(value);
@@ -6,7 +8,7 @@ function formatDate(value) {
 }
 
 function buildShortUrl(shortCode) {
-    return window.location.origin + "/" + shortCode;
+    return `${serverAddress}/${shortCode}`;
 }
 
 function checkTokenExpires(tokenExpires) {

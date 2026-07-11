@@ -27,6 +27,14 @@ const profileContainer = {
 
 const urlsShowExpiredCheckbox = document.getElementById("urls-show-expired");
 
+const editUrlModalEl = document.getElementById("edit-url-modal");
+const editUrlForm = document.getElementById("edit-url-form");
+const editShortCodeInput = document.getElementById("edit-short-code");
+const editOriginalUrlInput = document.getElementById("edit-original-url");
+const editExpiryDateInput = document.getElementById("edit-expiry-date");
+const editUrlSaveBtn = document.getElementById("edit-url-save-btn");
+const editUrlModal = new bootstrap.Modal(editUrlModalEl);
+
 function showToast(message) {
     toastBody.textContent = message;
     toast.show();
@@ -34,6 +42,7 @@ function showToast(message) {
 
 let urlsCacheActive = null;
 let urlsCacheAll = null;
+let editOriginalValues = null;
 
 function showUrlsContainerElement(element) {
     if (element.classList.contains("d-none")) {
@@ -88,45 +97,156 @@ async function deleteUrl(shortCode) {
 async function copyUrl(text) {
     if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(text);
+    }
+    else {
+        const tmp = document.createElement("textarea");
+        tmp.value = text;
+        tmp.setAttribute("readonly", "");
+        tmp.style.position = "absolute";
+        tmp.style.left = "-9999px";
+        document.body.appendChild(tmp);
+        tmp.select();
+        document.execCommand("copy");
+        document.body.removeChild(tmp);
+    }
+
+    showToast("Ссылка скопирована");
+}
+
+function toDatetimeLocalValue(isoString) {
+    if (!isoString) return "";
+    const d = new Date(isoString);
+    if (Number.isNaN(d.getTime())) return "";
+    const pad = (n) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function removeMilliseconds(dateTime) {
+    const dateTimeString = dateTime.toISOString();
+    const dateTimeSplited = dateTimeString.split(".");
+    return dateTimeSplited[0] + "Z";
+}
+
+function openEditModal(shortCode, originalUrl, expiresAt) {
+    editShortCodeInput.value = shortCode;
+    editOriginalUrlInput.value = originalUrl;
+    editExpiryDateInput.value = toDatetimeLocalValue(expiresAt);
+    editOriginalValues = {
+        originalUrl: originalUrl,
+        expiresAt: editExpiryDateInput.value
+    };
+    editUrlForm.classList.remove("was-validated");
+    editUrlModal.show();
+}
+
+function updateUrlRow(tr, originalUrl, expiresAt) {
+    const originalLink = tr.cells[0].querySelector("a");
+    originalLink.href = originalUrl;
+    originalLink.textContent = originalUrl;
+    tr.cells[3].textContent = expiresAt ? expiresAt : "Нет срока жизни";
+}
+
+function updateUrlCaches(shortCode, originalUrl, expiresAt) {
+    const update = (cache) => {
+        if (!cache) return;
+        const idx = cache.findIndex(u => u.shortCode === shortCode);
+        if (idx !== -1) {
+            cache[idx] = { ...cache[idx], originalUrl, expiresAt };
+        }
+    };
+    update(urlsCacheActive);
+    update(urlsCacheAll);
+}
+
+async function saveEditedUrl() {
+    editUrlForm.classList.add("was-validated");
+    if (!editUrlForm.checkValidity()) return;
+
+    const shortCode = editShortCodeInput.value;
+    const originalUrl = editOriginalUrlInput.value.trim();
+
+    let expiresAt = null;
+    if (editExpiryDateInput.value && editExpiryDateInput.value.trim() !== "") {
+        const expiryDate = new Date(editExpiryDateInput.value);
+        if (expiryDate <= Date.now()) {
+            showToast("Дата истечения должна быть в будущем");
+            return;
+        }
+        expiresAt = removeMilliseconds(expiryDate);
+    }
+
+    const currentExpiryValue = editExpiryDateInput.value.trim();
+    if (originalUrl === editOriginalValues.originalUrl && currentExpiryValue === editOriginalValues.expiresAt) {
+        editUrlModal.hide();
+        showToast("Ссылка обновлена");
         return;
     }
 
-    const tmp = document.createElement("textarea");
-    tmp.value = text;
-    tmp.setAttribute("readonly", "");
-    tmp.style.position = "absolute";
-    tmp.style.left = "-9999px";
-    document.body.appendChild(tmp);
-    tmp.select();
-    document.execCommand("copy");
-    document.body.removeChild(tmp);
+    try {
+        const response = await fetch(apiServerAddress + `/links/${shortCode}`, {
+            method: "PUT",
+            headers: {
+                "Authorization": `Bearer ${getAuthToken()}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ url: originalUrl, expiresAt })
+        });
+
+        if (!response.ok) {
+            console.error(response);
+            showToast("Не удалось обновить ссылку");
+            return;
+        }
+
+        const data = await response.json();
+        const tr = document.getElementById(shortCode);
+        if (tr) {
+            updateUrlRow(tr, data.url, data.expiresAt);
+        }
+        updateUrlCaches(shortCode, data.url, data.expiresAt);
+        editUrlModal.hide();
+        showToast("Ссылка обновлена");
+    }
+    catch (error) {
+        console.error(error);
+        showToast("Не удалось обновить ссылку");
+    }
 }
 
-function createTableRow(originalUrl, shortCode, createdAt, expiresAt) {
+function createTableRow(url, shortCode, createdAt, expiresAt) {
     const tr = document.createElement("tr");
     tr.id = shortCode;
 
+    const shortUrl = buildShortUrl(shortCode);
+
     tr.innerHTML = `<td class="text-truncate" style="max-width: 260px;">
-            <a href="${originalUrl}" class="link-body-emphasis text-decoration-none" target="_blank" rel="noopener noreferrer">
-                ${originalUrl}
+            <a href="${url}" class="link-body-emphasis text-decoration-none" target="_blank" rel="noopener noreferrer">
+                ${url}
             </a>
         </td>
         <td>
-            <a href="${shortCode}" class="link-primary text-decoration-none" target="_blank" rel="noopener noreferrer">
+            <a href="${shortUrl}" class="link-primary text-decoration-none" target="_blank" rel="noopener noreferrer">
                 ${shortCode}
             </a>
         </td>
         <td>${createdAt}</td>
         <td>${expiresAt ? expiresAt : "Нет срока жизни"}</td>
         <td>
-            <div class="d-flex justify-content-end gap-2">
-                <button type="button" id="copyBtn" class="btn btn-sm btn-outline-secondary">Копировать</button>
-                <button type="button" id="deleteBtn" class="btn btn-sm btn-outline-danger">Удалить</button>
+            <div class="d-flex justify-content-end gap-1">
+                <button type="button" class="btn btn-sm btn-outline-primary edit-btn" title="Изменить"><i class="bi bi-pencil-square"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-secondary copy-btn" title="Копировать"><i class="bi bi-clipboard"></i></button>
+                <button type="button" class="btn btn-sm btn-outline-danger delete-btn" title="Удалить"><i class="bi bi-trash3"></i></button>
             </div>
         </td>`;
 
-    tr.querySelector("[id=copyBtn]").addEventListener("click", () => copyUrl(buildShortUrl(shortCode)));
-    tr.querySelector("[id=deleteBtn]").addEventListener("click", () => deleteUrl(shortCode));
+    tr.querySelector(".edit-btn").addEventListener("click", () => {
+        const currentUrl = tr.cells[0].querySelector("a").textContent.trim();
+        const cellText = tr.cells[3].textContent.trim();
+        const currentExpiresAt = cellText === "Нет срока жизни" ? null : cellText;
+        openEditModal(shortCode, currentUrl, currentExpiresAt);
+    });
+    tr.querySelector(".copy-btn").addEventListener("click", () => copyUrl(shortUrl));
+    tr.querySelector(".delete-btn").addEventListener("click", () => deleteUrl(shortCode));
 
     return tr;
 }
@@ -139,7 +259,7 @@ function showUrls(urlsList) {
     }
 
     for (const url of [...urlsList].reverse()) {
-        const row = createTableRow(url.originalUrl, url.shortCode, url.createdAt, url.expiresAt);
+        const row = createTableRow(url.url, url.shortCode, url.createdAt, url.expiresAt);
         urlsContainer.urlsTableBody.append(row);
     }
 
@@ -160,7 +280,7 @@ async function fetchUserLinks(excludeExpired) {
     return response;
 }
 
-async function loadUserUrls() {
+async function loadUserUrls() {//TODO: добавить пагинацию
     try {
         const response = await fetchUserLinks(true);
         if (!response.ok) {
@@ -224,7 +344,7 @@ async function loadUserProfile() {
 
         const userData = await response.json();
         const username = userData.username;
-        const registrationDate = userData.registrationDate;
+        const registrationDate = userData.registrationAt;
 
         profileContainer.username.textContent = username;
         profileContainer.registrationDate.textContent = new Date(registrationDate).toLocaleString("ru-RU", {dateStyle: "short"});
@@ -251,5 +371,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else {
             await loadUserUrls();
         }
+    });
+
+    editUrlSaveBtn.addEventListener("click", saveEditedUrl);
+
+    document.getElementById("edit-expiry-clear").addEventListener("click", () => {
+        editExpiryDateInput.value = "";
     });
 });
