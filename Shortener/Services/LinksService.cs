@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using StackExchange.Redis;
 using Serilog.Context;
 using Shortener.Common.Utils;
 using Shortener.Data;
@@ -55,9 +54,7 @@ public class LinksService
 
     public async Task<ShortUrl?> GetCachedShortUrlAsync(string shortCode)
     {
-        ShortUrl? shortUrl;
-
-        shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
+        var shortUrl = await _cache.GetRecordAsync<ShortUrl?>(shortCode);
         if (shortUrl is not null)
         {
             _logger.Debug("Short url found in cache");
@@ -109,16 +106,14 @@ public class LinksService
             return null;
         }
 
-        if (requestData.OriginalUrl is not null && requestData.OriginalUrl != url.OriginalUrl)
-        {
-            url.OriginalUrl = requestData.OriginalUrl;
-        }
-        if (requestData.ExpiresAt is not null && requestData.ExpiresAt != url.ExpiresAt)
-        {
-            url.ExpiresAt = requestData.ExpiresAt;
-        }
+        url.OriginalUrl = requestData.Url;
+        url.ExpiresAt = requestData.ExpiresAt;
 
         await _db.SaveChangesAsync();
+
+        await _cache.RemoveAsync(shortCode);
+        _logger.Debug("Short url cache invalidated after update");
+
         return url;
     }
 

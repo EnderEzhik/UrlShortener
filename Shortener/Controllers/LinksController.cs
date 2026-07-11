@@ -27,23 +27,8 @@ public class LinksController : ControllerBase
         using var _ = LogContext.PushProperty("Url", requestData.Url);
         _logger.Information("Creating short url");
 
-        if (!requestData.Url.StartsWith("https://") && !requestData.Url.StartsWith("http://"))
-        {
-            _logger.Warning("Incorrect url");
-            return this.Problem(ApiErrors.IncorrectUrl);
-        }
-
-        if (requestData.Url.Length < 4 || requestData.Url.Length > 1000)
-        {
-            _logger.Warning("Incorrect url length");
-            return this.Problem(ApiErrors.IncorrectUrlLength);
-        }
-
-        if (requestData.ExpiresAt <= DateTimeOffset.UtcNow)
-        {
-            _logger.Warning("Incorrect expiration date");
-            return this.Problem(ApiErrors.IncorrectExpirationDate);
-        }
+        var validationError = ValidateUrlData(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
+        if (validationError is not null) return validationError;
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
         int? userId = !string.IsNullOrEmpty(rawUserId) ? int.Parse(rawUserId) : null;
@@ -54,7 +39,7 @@ public class LinksController : ControllerBase
 
         return new ShortUrlResponse()
         {
-            OriginalUrl = shortUrl.OriginalUrl,
+            Url = shortUrl.OriginalUrl,
             ShortCode = shortUrl.ShortCode,
             ExpiresAt = shortUrl.ExpiresAt,
             CreatedAt = shortUrl.CreatedAt
@@ -89,7 +74,7 @@ public class LinksController : ControllerBase
 
         return shortUrlsList.Select(u => new ShortUrlResponse()
         {
-            OriginalUrl = u.OriginalUrl,
+            Url = u.OriginalUrl,
             ShortCode = u.ShortCode,
             CreatedAt = u.CreatedAt,
             ExpiresAt = u.ExpiresAt
@@ -102,6 +87,9 @@ public class LinksController : ControllerBase
     {
         using var _ = LogContext.PushProperty("ShortCode", shortCode);
         _logger.Information("Updating short url");
+
+        var validationError = ValidateUrlData(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
+        if (validationError is not null) return validationError;
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
         int userId = int.Parse(rawUserId);
@@ -117,7 +105,7 @@ public class LinksController : ControllerBase
         return new ShortUrlResponse()
         {
             ShortCode = updatedUrl.ShortCode,
-            OriginalUrl = updatedUrl.OriginalUrl,
+            Url = updatedUrl.OriginalUrl,
             CreatedAt = updatedUrl.CreatedAt,
             ExpiresAt = updatedUrl.ExpiresAt
         };
@@ -141,5 +129,28 @@ public class LinksController : ControllerBase
 
         _logger.Information("Short url successfully deleted");
         return NoContent();
+    }
+
+    private ActionResult? ValidateUrlData(string url, DateTimeOffset expiresAt)
+    {
+        if (!url.StartsWith("https://") && !url.StartsWith("http://"))
+        {
+            _logger.Warning("Incorrect url");
+            return this.Problem(ApiErrors.IncorrectUrl);
+        }
+
+        if (url.Length < 4 || url.Length > 1000)
+        {
+            _logger.Warning("Incorrect url length");
+            return this.Problem(ApiErrors.IncorrectUrlLength);
+        }
+
+        if (expiresAt <= DateTimeOffset.UtcNow)
+        {
+            _logger.Warning("Incorrect expiration date");
+            return this.Problem(ApiErrors.IncorrectExpirationDate);
+        }
+
+        return null;
     }
 }
