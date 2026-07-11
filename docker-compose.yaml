@@ -78,6 +78,8 @@ services:
         environment:
             - ACCEPT_EULA=Y
             - SEQ_FIRSTRUN_ADMINPASSWORD=admin123
+        volumes:
+            - seq-data:/data
         networks:
             - internal
             - external
@@ -95,3 +97,4 @@ networks:
 volumes:
     db-data:
     redis-data:
+    seq-data:
