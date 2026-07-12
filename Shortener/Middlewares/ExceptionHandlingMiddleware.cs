@@ -25,10 +25,10 @@ public class ExceptionHandlingMiddleware
 
             var problem = new ProblemDetails
             {
-                Title = ApiErrors.InternalServerError.Title,
-                Status = ApiErrors.InternalServerError.StatusCode,
-                Detail = ApiErrors.InternalServerError.Detail,
-                Type = ApiErrors.InternalServerError.Type
+                Title = ApiErrors.Server.InternalServerError.Title,
+                Status = ApiErrors.Server.InternalServerError.StatusCode,
+                Detail = ApiErrors.Server.InternalServerError.Detail,
+                Type = ApiErrors.Server.InternalServerError.Type
             };
 
             problem.Extensions["traceId"] = context.TraceIdentifier;

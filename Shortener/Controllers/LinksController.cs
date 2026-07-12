@@ -56,13 +56,13 @@ public class LinksController : ControllerBase
         if (filters.Page <= 0)
         {
             _logger.Information("Page number is less than or equal to 0");
-            return this.Problem(ApiErrors.IncorrectPageNumber);
+            return this.Problem(ApiErrors.Pagination.IncorrectPageNumber);
         }
 
         if (filters.PageSize <= 0 || filters.PageSize > 100)
         {
             _logger.Information("Page size is less than 1 or greater than 100");
-            return this.Problem(ApiErrors.IncorrectPageSize);
+            return this.Problem(ApiErrors.Pagination.IncorrectPageSize);
         }
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
@@ -97,7 +97,7 @@ public class LinksController : ControllerBase
         var updatedUrl = await _linksService.UpdateShortUrlAsync(shortCode, userId, requestData);
         if (updatedUrl is null)
         {
-            return this.Problem(ApiErrors.IncorrectShortCode);
+            return this.Problem(ApiErrors.ShortCode.IncorrectShortCode);
         }
 
         _logger.Information("Short url successfully updated");
@@ -124,7 +124,7 @@ public class LinksController : ControllerBase
         bool result = await _linksService.DeleteShortUrlAsync(shortCode, userId);
         if (!result)
         {
-            return this.Problem(ApiErrors.IncorrectShortCode);
+            return this.Problem(ApiErrors.ShortCode.IncorrectShortCode);
         }
 
         _logger.Information("Short url successfully deleted");
@@ -136,19 +136,19 @@ public class LinksController : ControllerBase
         if (!url.StartsWith("https://") && !url.StartsWith("http://"))
         {
             _logger.Warning("Incorrect url");
-            return this.Problem(ApiErrors.IncorrectUrl);
+            return this.Problem(ApiErrors.Link.IncorrectUrl);
         }
 
         if (url.Length < 4 || url.Length > 1000)
         {
             _logger.Warning("Incorrect url length");
-            return this.Problem(ApiErrors.IncorrectUrlLength);
+            return this.Problem(ApiErrors.Link.IncorrectUrlLength);
         }
 
         if (expiresAt <= DateTimeOffset.UtcNow)
         {
             _logger.Warning("Incorrect expiration date");
-            return this.Problem(ApiErrors.IncorrectExpirationDate);
+            return this.Problem(ApiErrors.Link.IncorrectExpirationDate);
         }
 
         return null;

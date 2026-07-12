@@ -31,14 +31,14 @@ public class AuthController : ControllerBase
         {
             _logger.Warning("Login length is incorrect");
 
-            return this.Problem(ApiErrors.IncorrectLoginLength);
+            return this.Problem(ApiErrors.Auth.IncorrectLoginLength);
         }
 
         if (requestData.Password.Length < 8 || requestData.Password.Length > 64)
         {
             _logger.Warning("Password length is incorrect");
 
-            return this.Problem(ApiErrors.IncorrectPasswordLength);
+            return this.Problem(ApiErrors.Auth.IncorrectPasswordLength);
         }
 
         try
@@ -56,7 +56,7 @@ public class AuthController : ControllerBase
         }
         catch (ArgumentException)
         {
-            return this.Problem(ApiErrors.LoginIsAlreadyInUse);
+            return this.Problem(ApiErrors.Auth.LoginIsAlreadyInUse);
         }
     }
 
@@ -69,20 +69,20 @@ public class AuthController : ControllerBase
         if (requestData.Login.Length < 4 || requestData.Login.Length > 20)
         {
             _logger.Warning("Login length is incorrect");
-            return this.Problem(ApiErrors.IncorrectLoginLength);
+            return this.Problem(ApiErrors.Auth.IncorrectLoginLength);
         }
 
         if (requestData.Password.Length < 8 || requestData.Password.Length > 64)
         {
             _logger.Warning("Password length is incorrect");
-            return this.Problem(ApiErrors.IncorrectPasswordLength);
+            return this.Problem(ApiErrors.Auth.IncorrectPasswordLength);
         }
 
         var user = await _userService.GetUserByLoginAsync(requestData.Login);
         if (user is null || user.Password != requestData.Password)
         {
             _logger.Warning("User not found or password is incorrect");
-            return this.Problem(ApiErrors.IncorrectLoginOrPassword);
+            return this.Problem(ApiErrors.Auth.IncorrectLoginOrPassword);
         }
 
         var (token, expires) = _jwtService.GenerateJwtToken(user);

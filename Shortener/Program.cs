@@ -10,6 +10,7 @@ using Shortener.Middlewares;
 using Shortener.Options;
 using Shortener.Services;
 using Shortener.Services.Analytics;
+using Shortener.Converters;
 using StackExchange.Redis;
 
 namespace Shortener;
@@ -32,12 +33,13 @@ public class Program
 
             app.UseSerilogRequestLogging();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
-            app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.MapControllers();
 
@@ -190,7 +192,8 @@ public class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-                // options.JsonSerializerOptions.PropertyNamingPolicy =  null;
-            });
+                options.JsonSerializerOptions.Converters.Add(new DateTimeOffsetConverter());
+            }
+        );
     }
 }

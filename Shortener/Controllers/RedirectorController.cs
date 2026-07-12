@@ -39,7 +39,7 @@ public class RedirectorController : ControllerBase
         if (url is null || url.ExpiresAt <= DateTimeOffset.UtcNow)
         {
             _logger.Warning("Short url not found or expired");
-            return this.Problem(ApiErrors.IncorrectOrExpiredShortCode);
+            return this.Problem(ApiErrors.ShortCode.IncorrectOrExpiredShortCode);
         }
 
         _logger.Information("Successfully redirected");
