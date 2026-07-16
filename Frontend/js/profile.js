@@ -1,5 +1,5 @@
 import {apiServerAddress} from "./config.js";
-import {getAuthToken, buildShortUrl} from "./common.js";
+import {getAuthToken, buildShortUrl, formatDate, removeMilliseconds} from "./common.js";
 
 const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
@@ -13,16 +13,6 @@ const urlsContainer = {
     urlsTable: document.getElementById("urls-table-wrap"),
     urlsTableBody: document.getElementById("urls-tbody"),
     childs: document.getElementById("urls-container").children
-};
-
-const profileContainer = {
-    self: document.getElementById("profile-container"),
-    loadingIndicator: document.getElementById("profile-loading"),
-    errorIndicator: document.getElementById("profile-error"),
-    content: document.getElementById("profile-content"),
-    username: document.getElementById("profile-username"),
-    registrationDate: document.getElementById("profile-registration-date"),
-    urlCounter: document.getElementById("profile-url-counter")
 };
 
 const urlsShowExpiredCheckbox = document.getElementById("urls-show-expired");
@@ -79,7 +69,6 @@ async function deleteUrl(shortCode) {
         deleteUrlFromUI(shortCode);
         if (urlsCacheActive) {
             urlsCacheActive = urlsCacheActive.filter(u => u.shortCode !== shortCode);
-            profileContainer.urlCounter.textContent = urlsCacheActive?.length ?? 0;
         }
         if (urlsCacheAll) urlsCacheAll = urlsCacheAll.filter(u => u.shortCode !== shortCode);
         if (urlsContainer.urlsTableBody.rows.length === 0) {
@@ -121,12 +110,6 @@ function toDatetimeLocalValue(isoString) {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function removeMilliseconds(dateTime) {
-    const dateTimeString = dateTime.toISOString();
-    const dateTimeSplited = dateTimeString.split(".");
-    return dateTimeSplited[0] + "Z";
-}
-
 function openEditModal(shortCode, originalUrl, expiresAt) {
     editShortCodeInput.value = shortCode;
     editOriginalUrlInput.value = originalUrl;
@@ -143,7 +126,8 @@ function updateUrlRow(tr, originalUrl, expiresAt) {
     const originalLink = tr.cells[0].querySelector("a");
     originalLink.href = originalUrl;
     originalLink.textContent = originalUrl;
-    tr.cells[3].textContent = expiresAt ? expiresAt : "Нет срока жизни";
+    tr.dataset.expiresAt = expiresAt || "";
+    tr.cells[3].textContent = expiresAt ? formatDate(expiresAt) : "Нет срока жизни";
 }
 
 function updateUrlCaches(shortCode, originalUrl, expiresAt) {
@@ -216,6 +200,7 @@ async function saveEditedUrl() {
 function createTableRow(url, shortCode, createdAt, expiresAt) {
     const tr = document.createElement("tr");
     tr.id = shortCode;
+    tr.dataset.expiresAt = expiresAt || "";
 
     const shortUrl = buildShortUrl(shortCode);
 
@@ -229,8 +214,8 @@ function createTableRow(url, shortCode, createdAt, expiresAt) {
                 ${shortCode}
             </a>
         </td>
-        <td>${createdAt}</td>
-        <td>${expiresAt ? expiresAt : "Нет срока жизни"}</td>
+        <td>${formatDate(createdAt)}</td>
+        <td>${expiresAt ? formatDate(expiresAt) : "Нет срока жизни"}</td>
         <td>
             <div class="d-flex justify-content-end gap-1">
                 <button type="button" class="btn btn-sm btn-outline-primary edit-btn" title="Изменить"><i class="bi bi-pencil-square"></i></button>
@@ -241,8 +226,7 @@ function createTableRow(url, shortCode, createdAt, expiresAt) {
 
     tr.querySelector(".edit-btn").addEventListener("click", () => {
         const currentUrl = tr.cells[0].querySelector("a").textContent.trim();
-        const cellText = tr.cells[3].textContent.trim();
-        const currentExpiresAt = cellText === "Нет срока жизни" ? null : cellText;
+        const currentExpiresAt = tr.dataset.expiresAt || null;
         openEditModal(shortCode, currentUrl, currentExpiresAt);
     });
     tr.querySelector(".copy-btn").addEventListener("click", () => copyUrl(shortUrl));
@@ -326,42 +310,8 @@ async function ensureUrlsAllLoaded() {
     }
 }
 
-async function loadUserProfile() {
-    try {
-        const response = await fetch(apiServerAddress + "/users/me", {
-            method: "GET",
-            headers: {
-                "Authorization": `Bearer ${getAuthToken()}`,
-                "Content-Type": "application/json"
-            }
-        });
-        if (!response.ok) {
-            console.warn(response);
-            profileContainer.loadingIndicator.classList.add("d-none");
-            profileContainer.errorIndicator.classList.remove("d-none");
-            return;
-        }
-
-        const userData = await response.json();
-        const username = userData.username;
-        const registrationDate = userData.registrationAt;
-
-        profileContainer.username.textContent = username;
-        profileContainer.registrationDate.textContent = new Date(registrationDate).toLocaleString("ru-RU", {dateStyle: "short"});
-        profileContainer.urlCounter.textContent = urlsCacheActive?.length ?? 0;
-        profileContainer.loadingIndicator.classList.add("d-none");
-        profileContainer.content.classList.remove("d-none");
-    }
-    catch (error) {
-        console.error(error);
-        profileContainer.loadingIndicator.classList.add("d-none");
-        profileContainer.errorIndicator.classList.remove("d-none");
-    }
-}
-
 document.addEventListener("DOMContentLoaded", async () => {
     await loadUserUrls();
-    await loadUserProfile();
 
     urlsShowExpiredCheckbox.addEventListener("change", async () => {
         if (urlsShowExpiredCheckbox.checked) {

@@ -7,6 +7,12 @@ function formatDate(value) {
     return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
 }
 
+function removeMilliseconds(dateTime) {
+    const dateTimeString = dateTime.toISOString();
+    const dateTimeSplited = dateTimeString.split(".");
+    return dateTimeSplited[0] + "Z";
+}
+
 function buildShortUrl(shortCode) {
     return `${serverAddress}/${shortCode}`;
 }
@@ -56,4 +62,4 @@ function getAuthToken() {
     return null;
 }
 
-export { formatDate, buildShortUrl, hasAuthToken, getAuthToken };
+export { formatDate, removeMilliseconds, buildShortUrl, hasAuthToken, getAuthToken };

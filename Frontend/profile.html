@@ -25,7 +25,7 @@
                         <li class="nav-item" data-auth-buttons>
                             <div class="d-flex gap-2">
                                 <a class="btn btn-outline-primary" href="/login">Войти</a>
-                                <a class="btn btn-primary" href="/registration">Зарегистрироваться</a>
+                                <a class="btn btn-primary" href="/register">Зарегистрироваться</a>
                             </div>
                         </li>
                         <li class="nav-item dropdown d-none" data-profile-menu>
@@ -51,42 +51,7 @@
             </div>
 
             <div class="row g-4">
-                <aside class="col-12 col-lg-4 col-xl-3">
-                    <div class="card card-soft account-panel">
-                        <div class="card-header py-3 px-3 px-md-4">
-                            <div class="fw-semibold">Профиль пользователя</div>
-                        </div>
-
-                        <div id="profile-container" class="card-body p-3 p-md-4">
-                            <div id="profile-loading" class="text-center py-4 muted">
-                                Загрузка…
-                            </div>
-
-                            <div id="profile-error" class="alert alert-danger d-none" role="alert">
-                                Не удалось загрузить данные профиля
-                            </div>
-
-                            <div id="profile-content" class="d-none">
-                                <div class="vstack gap-3">
-                                    <div>
-                                        <div class="fw-medium mb-1 muted small">Логин</div>
-                                        <div id="profile-username" class="fw-semibold">*****</div>
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium mb-1 muted small">Дата регистрации</div>
-                                        <div id="profile-registration-date">**.**.****</div>
-                                    </div>
-                                    <div>
-                                        <div class="fw-medium mb-1 muted small">Количество активных ссылок</div>
-                                        <div id="profile-url-counter">***</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <div class="col-12 col-lg-8 col-xl-9">
+                <div class="col-12">
                     <div class="card card-soft">
                         <div class="card-header py-3 px-3 px-md-4">
                             <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">

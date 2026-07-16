@@ -1,5 +1,5 @@
 import {apiServerAddress} from "./config.js";
-import {formatDate, buildShortUrl, getAuthToken, hasAuthToken} from "./common.js";
+import {formatDate, removeMilliseconds, buildShortUrl, getAuthToken, hasAuthToken} from "./common.js";
 
 const form = document.getElementById("shortener-form");
 const originalUrlInput = document.getElementById("original-url");
@@ -51,13 +51,6 @@ async function createShortUrl(originalUrl, expiresDatetime) {
         })
     });
     return await response.json();
-}
-
-function removeMilliseconds(dateTime) {
-    const dateTimeString = dateTime.toISOString();
-    const dateTimeSplited = dateTimeString.split(".");
-    const dateTimeStringWithoutMilliseconds = dateTimeSplited[0] + "Z";
-    return dateTimeStringWithoutMilliseconds;
 }
 
 async function copyToClipboard(text) {
