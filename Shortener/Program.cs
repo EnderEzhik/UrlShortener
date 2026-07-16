@@ -11,6 +11,8 @@ using Shortener.Options;
 using Shortener.Services;
 using Shortener.Services.Analytics;
 using Shortener.Converters;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
 
 namespace Shortener;
@@ -42,6 +44,8 @@ public class Program
             app.UseMiddleware<RequestLoggingMiddleware>();
 
             app.MapControllers();
+
+            app.MapHealthChecks("/health");
 
             if (app.Environment.IsDevelopment())
             {
@@ -195,5 +199,20 @@ public class Program
                 options.JsonSerializerOptions.Converters.Add(new DateTimeOffsetConverter());
             }
         );
+
+        builder.Services.AddHealthChecks()
+            .AddCheck("database", () =>
+            {
+                using var connection = new NpgsqlConnection(builder.Configuration.GetConnectionString("DATABASE"));
+                connection.Open();
+                return HealthCheckResult.Healthy("PostgreSQL is reachable");
+            })
+            .AddCheck("redis", () =>
+            {
+                using var scope = builder.Services.BuildServiceProvider().CreateScope();
+                var cache = scope.ServiceProvider.GetRequiredService<IDistributedCache>();
+                cache.SetString("__healthcheck", "ok");
+                return HealthCheckResult.Healthy("Redis is reachable");
+            });
     }
 }
