@@ -1,5 +1,4 @@
-import {apiServerAddress} from "./config.js";
-import {getAuthToken, buildShortUrl, formatDate, removeMilliseconds} from "./common.js";
+import {getAuthToken, formatDate} from "./common.js";
 
 const toastEl = document.getElementById("app-toast");
 const toastBody = document.getElementById("toast-body");
@@ -55,7 +54,7 @@ function deleteUrlFromUI(shortCode) {
 
 async function deleteUrl(shortCode) {
     try {
-        const response = await fetch(apiServerAddress + `/links/${shortCode}`, {
+        const response = await fetch(`/api/links/${shortCode}`, {
             method: "DELETE",
             headers: {
                 "Authorization": `Bearer ${getAuthToken()}`
@@ -152,11 +151,11 @@ async function saveEditedUrl() {
     let expiresAt = null;
     if (editExpiryDateInput.value && editExpiryDateInput.value.trim() !== "") {
         const expiryDate = new Date(editExpiryDateInput.value);
-        if (expiryDate <= Date.now()) {
+        if (expiryDate.getTime() <= Date.now()) {
             showToast("Дата истечения должна быть в будущем");
             return;
         }
-        expiresAt = removeMilliseconds(expiryDate);
+        expiresAt = expiryDate;
     }
 
     const currentExpiryValue = editExpiryDateInput.value.trim();
@@ -167,7 +166,7 @@ async function saveEditedUrl() {
     }
 
     try {
-        const response = await fetch(apiServerAddress + `/links/${shortCode}`, {
+        const response = await fetch(`/api/links/${shortCode}`, {
             method: "PUT",
             headers: {
                 "Authorization": `Bearer ${getAuthToken()}`,
@@ -202,15 +201,13 @@ function createTableRow(url, shortCode, createdAt, expiresAt) {
     tr.id = shortCode;
     tr.dataset.expiresAt = expiresAt || "";
 
-    const shortUrl = buildShortUrl(shortCode);
-
     tr.innerHTML = `<td class="text-truncate" style="max-width: 260px;">
             <a href="${url}" class="link-body-emphasis text-decoration-none" target="_blank" rel="noopener noreferrer">
                 ${url}
             </a>
         </td>
         <td>
-            <a href="${shortUrl}" class="link-primary text-decoration-none" target="_blank" rel="noopener noreferrer">
+            <a href="/r/${shortCode}" class="link-primary text-decoration-none" target="_blank" rel="noopener noreferrer">
                 ${shortCode}
             </a>
         </td>
@@ -252,8 +249,8 @@ function showUrls(urlsList) {
 
 async function fetchUserLinks(excludeExpired) {
     const url = excludeExpired
-        ? apiServerAddress + "/links"
-        : apiServerAddress + "/links?ExcludeExpiredUrls=false";
+        ? "/api/links"
+        : "/api/links?ExcludeExpiredUrls=false";
     const response = await fetch(url, {
         method: "GET",
         headers: {

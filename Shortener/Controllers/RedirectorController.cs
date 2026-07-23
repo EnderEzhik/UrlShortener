@@ -7,6 +7,7 @@ using Shortener.Services.Analytics;
 namespace Shortener.Controllers;
 
 [ApiController]
+[Route("/r")]
 public class RedirectorController : ControllerBase
 {
     private readonly Serilog.ILogger _logger;

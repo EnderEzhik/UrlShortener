@@ -10,7 +10,6 @@ using Shortener.Middlewares;
 using Shortener.Options;
 using Shortener.Services;
 using Shortener.Services.Analytics;
-using Shortener.Converters;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using StackExchange.Redis;
@@ -196,7 +195,6 @@ public class Program
             .AddJsonOptions(options =>
             {
                 options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-                options.JsonSerializerOptions.Converters.Add(new DateTimeOffsetConverter());
             }
         );
 

@@ -1,5 +1,5 @@
 import {apiServerAddress} from "./config.js";
-import {formatDate, removeMilliseconds, buildShortUrl, getAuthToken, hasAuthToken} from "./common.js";
+import {formatDate, buildShortUrl, getAuthToken, hasAuthToken} from "./common.js";
 
 const form = document.getElementById("shortener-form");
 const originalUrlInput = document.getElementById("original-url");
@@ -38,7 +38,6 @@ async function createShortUrl(originalUrl, expiresDatetime) {
         "Content-Type": "application/json"
     };
     if (hasAuthToken()) {
-
         headers["Authorization"] = `Bearer ${getAuthToken()}`;
     }
 
@@ -88,11 +87,11 @@ form.addEventListener("submit", async (e) => {
     let expiresDatetime = null;
     if (expiryInput.value && expiryInput.value.trim() !== "") {
         const expiryDate = new Date(expiryInput.value);
-        if (expiryDate <= Date.now()) {
+        if (expiryDate.getTime() <= Date.now()) {
             showToast("Дата истечения должна быть в будущем");
             return;
         }
-        expiresDatetime = removeMilliseconds(expiryDate);
+        expiresDatetime = expiryDate;
     }
 
     try {

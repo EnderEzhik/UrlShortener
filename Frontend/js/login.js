@@ -3,8 +3,6 @@ if (hasAuthToken()) {
     window.location.pathname = "";
 }
 
-import { apiServerAddress } from "./config.js";
-
 const form = document.getElementById("login-form");
 const loginInput = document.getElementById("login-identifier");
 const passwordInput = document.getElementById("login-password");
@@ -44,7 +42,7 @@ form.addEventListener("submit", async function (event) {
     const password = passwordInput.value;
 
     try {
-        const response = await fetch(apiServerAddress + "/auth/login", {
+        const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"

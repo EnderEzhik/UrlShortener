@@ -1,20 +1,8 @@
-import { serverAddress } from "./config.js";
-
 function formatDate(value) {
     if (!value) return "—";
     const d = new Date(value);
     if (Number.isNaN(d.getTime())) return "—";
     return d.toLocaleString("ru-RU", { dateStyle: "medium", timeStyle: "short" });
-}
-
-function removeMilliseconds(dateTime) {
-    const dateTimeString = dateTime.toISOString();
-    const dateTimeSplited = dateTimeString.split(".");
-    return dateTimeSplited[0] + "Z";
-}
-
-function buildShortUrl(shortCode) {
-    return `${serverAddress}/${shortCode}`;
 }
 
 function checkTokenExpires(tokenExpires) {
@@ -62,4 +50,4 @@ function getAuthToken() {
     return null;
 }
 
-export { formatDate, removeMilliseconds, buildShortUrl, hasAuthToken, getAuthToken };
+export { formatDate, hasAuthToken, getAuthToken };
