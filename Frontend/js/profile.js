@@ -33,6 +33,13 @@ let urlsCacheActive = null;
 let urlsCacheAll = null;
 let editOriginalValues = null;
 
+function handleSessionExpired() {
+    showToast("Сессия истекла. Пожалуйста, войдите заново");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    setTimeout(() => { window.location.href = "/login"; }, 2200);
+}
+
 function showUrlsContainerElement(element) {
     if (element.classList.contains("d-none")) {
         element.classList.remove("d-none");
@@ -60,6 +67,10 @@ async function deleteUrl(shortCode) {
                 "Authorization": `Bearer ${getAuthToken()}`
             }
         });
+        if (response.status === 401) {
+            handleSessionExpired();
+            return;
+        }
         if (!response.ok) {
             console.error(response);
             showToast("Ошибка при удалении ссылки");
@@ -175,6 +186,10 @@ async function saveEditedUrl() {
             body: JSON.stringify({ url: originalUrl, expiresAt })
         });
 
+        if (response.status === 401) {
+            handleSessionExpired();
+            return;
+        }
         if (!response.ok) {
             console.error(response);
             showToast("Не удалось обновить ссылку");
@@ -258,13 +273,17 @@ async function fetchUserLinks(excludeExpired) {
             "Content-Type": "application/json"
         }
     });
+    if (response.status === 401) {
+        handleSessionExpired();
+        return null;
+    }
     return response;
 }
 
 async function loadUserUrls() {//TODO: добавить пагинацию
     try {
         const response = await fetchUserLinks(true);
-        if (!response.ok) {
+        if (!response || !response.ok) {
             console.warn(response);
             showUrlsContainerElement(urlsContainer.errorIndicator);
             return;
@@ -293,7 +312,7 @@ async function ensureUrlsAllLoaded() {
     try {
         showUrlsContainerElement(urlsContainer.loadingIndicator);
         const response = await fetchUserLinks(false);
-        if (!response.ok) {
+        if (!response || !response.ok) {
             console.warn(response);
             showUrlsContainerElement(urlsContainer.errorIndicator);
             return;
