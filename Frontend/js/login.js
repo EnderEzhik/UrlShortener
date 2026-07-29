@@ -25,7 +25,7 @@ async function getResponseErrorMessage(response) {
     let message = `Ошибка сервера (${response.status}).`;
 
     const data = await response.json();
-    const extracted = data.error?.message;
+    const extracted = data.detail;
     if (extracted) message = extracted;
 
     return message;
