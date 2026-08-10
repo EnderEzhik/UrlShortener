@@ -136,7 +136,7 @@ public class LinksController : ControllerBase
         if (!Uri.TryCreate(url, UriKind.Absolute, out _))
         {
             _logger.Warning("Incorrect url");
-            return this.Problem(ApiErrors.Link.IncorrectUrl);
+            return this.Problem(ApiErrors.Link.InvalidUrl);
         }
 
         if (url.Length < 4 || url.Length > 1000)

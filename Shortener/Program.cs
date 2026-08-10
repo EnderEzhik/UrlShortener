@@ -44,7 +44,9 @@ public class Program
 
             if (app.Environment.IsProduction())
             {
-                app.UseCors(options => options.WithOrigins($"https://{builder.Configuration["PUBLIC_DOMAIN"]}", $"http://{builder.Configuration["PUBLIC_DOMAIN"]}").AllowAnyHeader().AllowAnyMethod());
+                string publicDomain = builder.Configuration["PUBLIC_DOMAIN"];
+                ArgumentNullException.ThrowIfNullOrWhiteSpace(publicDomain);
+                app.UseCors(options => options.WithOrigins($"https://{publicDomain}", $"http://{publicDomain}").AllowAnyHeader().AllowAnyMethod());
             }
 
             app.UseAuthentication();

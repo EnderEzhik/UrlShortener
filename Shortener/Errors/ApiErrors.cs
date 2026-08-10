@@ -8,11 +8,11 @@ public static class ApiErrors
 {
     public static class Link
     {
-        public static readonly ApiError IncorrectUrl = new(
-            Type: "errors/incorrect-url",
-            Title: "Incorrect url",
+        public static readonly ApiError InvalidUrl = new(
+            Type: "errors/invalid-url",
+            Title: "Invalid url",
             StatusCode: StatusCodes.Status400BadRequest,
-            Detail: "Url should start with 'https://' or 'http://'"
+            Detail: "Invalid URL"
         );
 
         public static readonly ApiError IncorrectUrlLength = new(
