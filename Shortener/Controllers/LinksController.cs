@@ -27,7 +27,7 @@ public class LinksController : ControllerBase
         using var _ = LogContext.PushProperty("Url", requestData.Url);
         _logger.Information("Creating short url");
 
-        var validationError = ValidateUrlData(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
+        var validationError = ValidateUrl(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
         if (validationError is not null) return validationError;
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)?.Value;
@@ -88,7 +88,7 @@ public class LinksController : ControllerBase
         using var _ = LogContext.PushProperty("ShortCode", shortCode);
         _logger.Information("Updating short url");
 
-        var validationError = ValidateUrlData(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
+        var validationError = ValidateUrl(requestData.Url, requestData.ExpiresAt ?? DateTimeOffset.MaxValue);
         if (validationError is not null) return validationError;
 
         var rawUserId = HttpContext.User.Claims.FirstOrDefault(x => x.Type == JwtRegisteredClaimNames.Sub)!.Value;
@@ -131,9 +131,9 @@ public class LinksController : ControllerBase
         return NoContent();
     }
 
-    private ActionResult? ValidateUrlData(string url, DateTimeOffset expiresAt)
+    private ActionResult? ValidateUrl(string url, DateTimeOffset expiresAt)
     {
-        if (!url.StartsWith("https://") && !url.StartsWith("http://"))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out _))
         {
             _logger.Warning("Incorrect url");
             return this.Problem(ApiErrors.Link.IncorrectUrl);

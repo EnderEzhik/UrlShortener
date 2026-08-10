@@ -46,6 +46,7 @@ public class Program
             {
                 app.UseCors(options => options.WithOrigins($"https://{builder.Configuration["PUBLIC_DOMAIN"]}", $"http://{builder.Configuration["PUBLIC_DOMAIN"]}").AllowAnyHeader().AllowAnyMethod());
             }
+
             app.UseAuthentication();
             app.UseAuthorization();
 
