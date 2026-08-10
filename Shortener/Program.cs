@@ -30,13 +30,22 @@ public class Program
             var app = builder.Build();
 
             CheckDatabaseConnection(builder.Configuration);
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                context.Database.Migrate();
+            }
+
             CheckRedisConnection(builder.Configuration);
 
             app.UseSerilogRequestLogging();
             app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-            app.UseCors(options => options.WithOrigins($"https://{builder.Configuration["DOMAIN"]}").AllowAnyHeader().AllowAnyMethod());
-
+            if (app.Environment.IsProduction())
+            {
+                app.UseCors(options => options.WithOrigins($"https://{builder.Configuration["PUBLIC_DOMAIN"]}", $"http://{builder.Configuration["PUBLIC_DOMAIN"]}").AllowAnyHeader().AllowAnyMethod());
+            }
             app.UseAuthentication();
             app.UseAuthorization();
 
