@@ -133,13 +133,25 @@ public class LinksController : ControllerBase
 
     private ActionResult? ValidateUrl(string url, DateTimeOffset expiresAt)
     {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out _))
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
         {
             _logger.Warning("Incorrect url");
             return this.Problem(ApiErrors.Link.InvalidUrl);
         }
 
-        if (url.Length < 4 || url.Length > 1000)
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+        {
+            _logger.Warning("Unsupported url scheme: {Scheme}", uri.Scheme);
+            return this.Problem(ApiErrors.Link.InvalidUrl);
+        }
+
+        if (string.IsNullOrWhiteSpace(uri.Host))
+        {
+            _logger.Warning("Url has no host");
+            return this.Problem(ApiErrors.Link.InvalidUrl);
+        }
+
+        if (url.Length > 1000)
         {
             _logger.Warning("Incorrect url length");
             return this.Problem(ApiErrors.Link.IncorrectUrlLength);
